@@ -341,21 +341,18 @@ def ensure_file_icons(names: set[str], vendor: Path) -> Path:
 def collect(site: SiteConfig, specs: list[tuple[str, pathspec.GitIgnoreSpec]]) -> list[Path]:
     published: list[Path] = []
     for dirpath, dirnames, filenames in os.walk(site.source):
-        rel_dir = Path(dirpath).relative_to(site.source).as_posix()
-        if rel_dir == ".":
-            rel_dir = ""
         kept_dirs = []
         for d in dirnames:
             if d == ".git":
                 continue
-            rel_root = (site.root / rel_dir / d).relative_to(site.root).as_posix()
+            rel_root = (Path(dirpath) / d).relative_to(site.root).as_posix()
             if not is_ignored(rel_root, specs):
                 kept_dirs.append(d)
         dirnames[:] = kept_dirs
         for f in filenames:
             if f in (".gitignore", ".siteignore", "__init__.py"):
                 continue
-            rel_root = (site.root / rel_dir / f).relative_to(site.root).as_posix()
+            rel_root = (Path(dirpath) / f).relative_to(site.root).as_posix()
             if not is_ignored(rel_root, specs):
                 published.append(Path(dirpath) / f)
     return published
@@ -658,6 +655,13 @@ class Builder:
                 key = f if rel_dir == "." else f"{rel_dir}/{f}"
                 if key not in expected:
                     (Path(dirpath) / f).unlink()
+        for dirpath, dirnames, filenames in os.walk(static, topdown=False):
+            for d in dirnames:
+                if d in protected:
+                    continue
+                p = Path(dirpath) / d
+                if p.is_dir() and not any(p.iterdir()):
+                    p.rmdir()
 
     def icon_for(self, src: Path) -> str | None:
         ext = src.suffix.lower()
