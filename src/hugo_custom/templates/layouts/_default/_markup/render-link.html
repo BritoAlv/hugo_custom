@@ -15,18 +15,17 @@
   {{- end }}
   {{- if $head }}
     {{- $ext := path.Ext $head }}
-    {{- $base := strings.TrimSuffix $ext $head }}
-    {{- $dir := page.File.Dir }}
+    {{- $lookup := delimit (apply (split (path.Join page.File.Dir $head) "/") "strings.TrimPrefix" "." ".") "/" }}
     {{- if eq $ext ".md" }}
-      {{- with site.GetPage (path.Join $dir $base) }}
+      {{- with site.GetPage (strings.TrimSuffix ".md" $lookup) }}
         {{- $out = printf "%s%s" .RelPermalink $suffix }}
       {{- end }}
     {{- else if eq $ext ".ipynb" }}
-      {{- with site.GetPage (path.Join $dir $head) }}
+      {{- with site.GetPage $lookup }}
         {{- $out = printf "%s%s" .RelPermalink $suffix }}
       {{- end }}
     {{- else if in (slice ".rs" ".py" ".toml" ".sh" ".bash" ".js" ".ts" ".jsx" ".tsx" ".json" ".yml" ".yaml" ".c" ".h" ".cpp" ".hpp" ".java" ".go" ".rb" ".txt" ".ini" ".cfg" ".sql" ".html" ".css" ".lock") $ext }}
-      {{- with site.GetPage (path.Join "codeview" $dir $head) }}
+      {{- with site.GetPage (path.Join "codeview" $lookup) }}
         {{- $out = printf "%s%s" .RelPermalink $suffix }}
       {{- end }}
     {{- end }}

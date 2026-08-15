@@ -362,6 +362,12 @@ def rel_of(site: SiteConfig, path: Path) -> str:
     return path.relative_to(site.source).as_posix()
 
 
+def url_rel(rel: str) -> str:
+    """Strip leading dots from path segments so Hugo renders them (hidden
+    files and directories are skipped by Hugo)."""
+    return "/".join(seg.lstrip(".") for seg in rel.split("/"))
+
+
 def git_date(site: SiteConfig, path: Path, first: bool) -> str | None:
     if first:
         cmd = ["git", "log", "--diff-filter=A", "--format=%aI", "--", str(path)]
@@ -512,20 +518,21 @@ class Builder:
         static_expected: set[str] = set()
         for src in self.published:
             rel = rel_of(site, src)
+            urel = url_rel(rel)
             ext = src.suffix.lower()
             if ext == ".md":
-                content_expected.add(rel)
+                content_expected.add(urel)
                 self.write_page(src)
             elif ext == ".ipynb":
-                content_expected.add(f"{rel}.md")
+                content_expected.add(f"{urel}.md")
                 self.write_notebook(src)
             elif ext in CODE_EXTENSIONS:
-                content_expected.add(f"{CODE_OUTPUT_DIR}/{rel}.md")
-                static_expected.add(rel)
+                content_expected.add(f"{CODE_OUTPUT_DIR}/{urel}.md")
+                static_expected.add(urel)
                 self.copy_raw(src)
                 self.write_codeview(src)
             else:
-                static_expected.add(rel)
+                static_expected.add(urel)
                 self.copy_raw(src)
         self.clean_content(content_expected)
         self.clean_static(static_expected)
@@ -567,7 +574,7 @@ class Builder:
             if title:
                 meta["title"] = title
         self.pages.append((rel, tags, created or ""))
-        write_if_changed(site.stage / "content" / rel, front_matter(meta) + body)
+        write_if_changed(site.stage / "content" / url_rel(rel), front_matter(meta) + body)
 
     def write_notebook(self, src: Path) -> None:
         site = self.site
@@ -598,11 +605,13 @@ class Builder:
             meta["image"] = f"{site.site_url}og/{slugify(parts[0])}.png"
         self.pages.append((rel, tags, created or ""))
         body = ipynb_to_markdown(nb)
-        write_if_changed(site.stage / "content" / f"{rel}.md", front_matter(meta) + body)
+        write_if_changed(
+            site.stage / "content" / f"{url_rel(rel)}.md", front_matter(meta) + body
+        )
 
     def write_codeview(self, src: Path) -> None:
         site = self.site
-        rel = rel_of(site, src)
+        rel = url_rel(rel_of(site, src))
         try:
             src.read_text(encoding="utf-8")
         except UnicodeDecodeError:
@@ -623,7 +632,7 @@ class Builder:
 
     def copy_raw(self, src: Path) -> None:
         site = self.site
-        dst = site.stage / "static" / rel_of(site, src)
+        dst = site.stage / "static" / url_rel(rel_of(site, src))
         if (
             not dst.exists()
             or dst.stat().st_size != src.stat().st_size
@@ -758,7 +767,7 @@ class Builder:
             node["files"].append((kind, parts[-1], href, icon))
 
         for p in sorted(self.published, key=lambda x: rel_of(site, x).lower()):
-            rel = rel_of(site, p)
+            rel = url_rel(rel_of(site, p))
             ext = p.suffix.lower()
             parts = rel.split("/")
             if ext == ".md":
