@@ -1,0 +1,17 @@
+{{ define "main" }}
+<h1 class="page-title">{{ .Site.Title }}</h1>
+{{- range hugo.Data.sidebar.entries }}
+  {{- if .section }}
+<h2>{{ .section }}</h2>
+<ul>
+  {{- range .contents }}
+    {{- partial "index-item.html" . }}
+  {{- end }}
+</ul>
+  {{- end }}
+{{- end }}
+<h2>Site</h2>
+<ul>
+  <li><a href="/tags/">Tag index</a></li>
+</ul>
+{{ end }}

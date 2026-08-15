@@ -1,0 +1,24 @@
+locale = "en-us"
+uglyURLs = false
+enableRobotsTXT = true
+
+[taxonomies]
+tag = "tags"
+
+[outputs]
+home = ["html", "json"]
+
+[markup.goldmark.extensions.passthrough]
+enable = true
+
+[markup.goldmark.extensions.passthrough.delimiters]
+block = [["$$", "$$"]]
+inline = [["$", "$"]]
+
+[markup.highlight]
+codeFences = true
+noClasses = false
+lineNos = false
+style = "github"
+
+[params]

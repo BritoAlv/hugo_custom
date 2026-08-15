@@ -1,0 +1,11 @@
+title = "Hugo Custom"
+site-url = "https://britoalv.github.io/hugo_custom/"
+brand = "HUGO CUSTOM"
+source = "."
+output = "site"
+ignore = [
+    ".github/",
+    "README.md",
+    "examples/",
+    "src/hugo_custom/templates/",
+]

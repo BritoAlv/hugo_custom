@@ -1,0 +1,29 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ .Title }}{{ if not .IsHome }} · {{ .Site.Title }}{{ end }}</title>
+{{- $desc := or .Description (and (not .IsHome) (.Summary | plainify | truncate 160)) }}
+{{- with $desc }}<meta name="description" content="{{ . }}">{{ end }}
+<meta name="generator" content="Hugo">
+{{- if .IsHome }}
+<link rel="canonical" href="{{ .Site.BaseURL }}">
+{{- else }}
+<link rel="canonical" href="{{ .Permalink }}">
+{{- end }}
+{{- if .IsHome }}
+<meta property="og:title" content="{{ .Site.Title }}">
+<meta property="og:url" content="{{ .Site.BaseURL }}">
+{{- else }}
+<meta property="og:title" content="{{ .Title }}">
+<meta property="og:url" content="{{ .Permalink }}">
+{{- end }}
+{{- with $desc }}<meta property="og:description" content="{{ . }}">{{ end }}
+{{- with .Params.image }}
+<meta property="og:image" content="{{ . }}">
+<meta name="twitter:card" content="summary_large_image">
+{{- else }}
+<meta name="twitter:card" content="summary">
+{{- end }}
+<meta name="twitter:title" content="{{ .Title }}">
+<link rel="stylesheet" href="/vendor/fonts/lato.css">
+<link rel="stylesheet" href="/vendor/katex/katex.min.css">
+<link rel="stylesheet" href="/css/main.css">

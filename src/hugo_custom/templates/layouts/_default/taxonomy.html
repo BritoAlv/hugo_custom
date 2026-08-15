@@ -1,0 +1,11 @@
+{{ define "main" }}
+<h1 class="page-title">Tags</h1>
+{{- range .Data.Terms.Alphabetical }}
+<h2 id="{{ .Term | urlize }}">{{ .Term }}</h2>
+<ul>
+  {{- range .Pages }}
+    <li><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>
+  {{- end }}
+</ul>
+{{- end }}
+{{ end }}

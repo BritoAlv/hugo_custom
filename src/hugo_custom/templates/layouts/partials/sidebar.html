@@ -1,0 +1,8 @@
+{{- $current := page.RelPermalink }}
+<nav class="sidebar" aria-label="Site navigation">
+  <ul class="sidebar-menu">
+    {{- range hugo.Data.sidebar.entries }}
+      {{- partial "sidebar-item.html" (dict "entry" . "current" $current) }}
+    {{- end }}
+  </ul>
+</nav>

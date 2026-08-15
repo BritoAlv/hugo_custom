@@ -1,0 +1,25 @@
+{{ define "main" }}
+<article class="page">
+  <h1 class="page-title">{{ .Title }}</h1>
+  {{ partial "page-meta.html" . }}
+  {{- with .Params.rel }}
+    {{- $code := "" }}
+    {{- with readFile (printf "static/%s" .) }}{{ $code = . }}{{ end }}
+    <p class="codeview-path"><strong>Path:</strong> <code>{{ . }}</code> · <a href="{{ $.Params.download }}">Download raw file</a></p>
+    {{ highlight $code ($.Params.lang | default "text") "" }}
+  {{- else }}
+    {{- $toc := .TableOfContents }}
+    {{- if strings.Contains $toc "<ul" }}
+    <nav class="toc">
+      <details open>
+        <summary>Contents</summary>
+        {{ $toc | safeHTML }}
+      </details>
+    </nav>
+    {{- end }}
+    <div class="page-body">
+      {{ .Content }}
+    </div>
+  {{- end }}
+</article>
+{{ end }}

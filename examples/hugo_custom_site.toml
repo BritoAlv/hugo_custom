@@ -1,0 +1,17 @@
+# hugo-custom site configuration.
+# Place this file at the top of your content repo; it is found automatically
+# (run the tool from anywhere inside the repo).
+
+title = "My Site"
+site-url = "https://username.github.io/mysite/"
+brand = "MY SITE"
+source = "self"           # folder with the markdown/code to publish
+stage = "hugo_src"        # staged hugo site project (generated; gitignore it)
+output = "site"           # rendered site (generated; gitignore it)
+# siteignore = ".siteignore"   # optional; extra exclusions applied only on --deploy
+# ignore = [".github/", "README.md"]  # optional; always-applied patterns (gitignore syntax)
+# cache-dir = "~/.cache/hugo_custom"  # optional; override asset cache
+
+# Optional keys merged into the `[params]` section of the generated hugo.toml.
+# [params]
+# description = "My site"

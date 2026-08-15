@@ -1,0 +1,35 @@
+{{- $dest := .Destination }}
+{{- $out := $dest }}
+{{- if and $dest (not (or (strings.HasPrefix $dest "http://") (strings.HasPrefix $dest "https://") (strings.HasPrefix $dest "mailto:") (strings.HasPrefix $dest "#") (strings.HasPrefix $dest "/"))) }}
+  {{- $head := $dest }}
+  {{- $suffix := "" }}
+  {{- if strings.Contains $head "#" }}
+    {{- $parts := split $head "#" }}
+    {{- $head = index $parts 0 }}
+    {{- $suffix = printf "#%s" (delimit (after 1 $parts) "#") }}
+  {{- end }}
+  {{- if strings.Contains $head "?" }}
+    {{- $parts := split $head "?" }}
+    {{- $head = index $parts 0 }}
+    {{- $suffix = printf "?%s%s" (delimit (after 1 $parts) "?") $suffix }}
+  {{- end }}
+  {{- if $head }}
+    {{- $ext := path.Ext $head }}
+    {{- $base := strings.TrimSuffix $ext $head }}
+    {{- $dir := page.File.Dir }}
+    {{- if eq $ext ".md" }}
+      {{- with site.GetPage (path.Join $dir $base) }}
+        {{- $out = printf "%s%s" .RelPermalink $suffix }}
+      {{- end }}
+    {{- else if eq $ext ".ipynb" }}
+      {{- with site.GetPage (path.Join $dir $head) }}
+        {{- $out = printf "%s%s" .RelPermalink $suffix }}
+      {{- end }}
+    {{- else if in (slice ".rs" ".py" ".toml" ".sh" ".bash" ".js" ".ts" ".jsx" ".tsx" ".json" ".yml" ".yaml" ".c" ".h" ".cpp" ".hpp" ".java" ".go" ".rb" ".txt" ".ini" ".cfg" ".sql" ".html" ".css" ".lock") $ext }}
+      {{- with site.GetPage (path.Join "codeview" $dir $head) }}
+        {{- $out = printf "%s%s" .RelPermalink $suffix }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+<a href="{{ $out }}"{{ with .Title }} title="{{ . }}"{{ end }}{{ if strings.HasPrefix $out "http" }} rel="noopener"{{ end }}>{{ .Text | safeHTML }}</a>

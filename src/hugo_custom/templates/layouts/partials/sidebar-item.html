@@ -1,0 +1,17 @@
+{{- if .entry.section }}
+<li class="sidebar-section">
+  <span class="sidebar-section-label">{{ .entry.section }}</span>
+  <ul class="sidebar-menu">
+    {{- range .entry.contents }}
+      {{- partial "sidebar-item.html" (dict "entry" . "current" $.current) }}
+    {{- end }}
+  </ul>
+</li>
+{{- else if ne .entry.kind "file" }}
+<li class="sidebar-item">
+  <a href="{{ .entry.href }}"{{ if eq .entry.href $.current }} class="active"{{ end }}>
+    {{- with .entry.icon }}<img class="sidebar-file-icon" src="/icons/{{ . }}.svg" alt="" />{{ end }}
+    <span class="menu-text">{{ .entry.text }}</span>
+  </a>
+</li>
+{{- end }}

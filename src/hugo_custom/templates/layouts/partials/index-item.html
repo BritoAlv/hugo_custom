@@ -1,0 +1,7 @@
+{{- if .section }}
+  {{- range .contents }}
+    {{- partial "index-item.html" . }}
+  {{- end }}
+{{- else }}
+<li><a href="{{ .href }}">{{ .text }}</a></li>
+{{- end }}

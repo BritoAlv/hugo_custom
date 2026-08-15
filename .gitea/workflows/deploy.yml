@@ -1,0 +1,20 @@
+name: Deploy local site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: local
+    steps:
+      - name: Checkout
+        run: git clone "${{ github.server_url }}/${{ github.repository }}.git" .
+      - name: Build site
+        run: uvx --from 'git+${{ github.server_url }}/BritoAlv/hugo_custom.git@main' hugo-custom --config hugo_custom_site.toml --deploy
+      - name: Deploy
+        run: |
+          rm -rf "$HOME/.gitea/sites/hugo_custom"
+          mkdir -p "$HOME/.gitea/sites"
+          cp -r site "$HOME/.gitea/sites/hugo_custom"

@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hugo-custom"
+version = "0.1.0"
+description = "Generic Hugo pipeline: turn a content folder into a self-contained static site"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pathspec>=0.12",
+    "pillow>=10",
+    "pyyaml>=6",
+    "tomli-w>=1.0",
+]
+
+[project.scripts]
+hugo-custom = "hugo_custom.build:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/hugo_custom"]

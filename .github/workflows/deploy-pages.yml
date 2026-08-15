@@ -1,0 +1,65 @@
+name: Deploy to GitHub Pages
+
+on:
+  workflow_call:
+    inputs:
+      config:
+        description: Path to the hugo_custom_site.toml configuration in the caller repo
+        required: false
+        default: hugo_custom_site.toml
+        type: string
+      output:
+        description: Directory (relative to the caller repo root) where the site is rendered
+        required: false
+        default: site
+        type: string
+      hugo-version:
+        description: Hugo version to install
+        required: false
+        default: 0.165.0
+        type: string
+      package:
+        description: uv package source for hugo-custom
+        required: false
+        default: git+https://github.com/BritoAlv/hugo_custom.git@main
+        type: string
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Hugo
+        uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: ${{ inputs.hugo-version }}
+          extended: true
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Build site
+        env:
+          HUGO_DEPLOY: "true"
+        run: uvx --from '${{ inputs.package }}' hugo-custom --config '${{ inputs.config }}'
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ inputs.output }}
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
