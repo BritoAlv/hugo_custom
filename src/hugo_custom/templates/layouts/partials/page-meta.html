@@ -2,7 +2,7 @@
 <div class="page-meta">
   {{- with .Params.lastmod }}<p><strong>Last updated:</strong> {{ dateFormat "2006-01-02" . }}</p>{{ end }}
   {{- with .Params.tags }}
-  <p><strong>Keywords:</strong> {{- range $i, $t := . }} {{ if $i }}<span class="sep"> · </span>{{ end }}<a href="{{ printf "/tags/%s/" ($t | urlize) }}"><code>{{ $t }}</code></a>{{ end }}</p>
+  <p><strong>Keywords:</strong> {{- range $i, $t := . }} {{ if $i }}<span class="sep"> · </span>{{ end }}<a href="{{ printf "tags/%s/" ($t | urlize) | relURL }}"><code>{{ $t }}</code></a>{{ end }}</p>
   {{- end }}
 </div>
 {{- end }}

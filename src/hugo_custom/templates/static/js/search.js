@@ -6,7 +6,7 @@
   var loaded = false;
 
   function load() {
-    return fetch("/index.json")
+    return fetch(input.dataset.index || "/index.json")
       .then(function (r) { return r.json(); })
       .then(function (data) { index = data; loaded = true; })
       .catch(function () {});

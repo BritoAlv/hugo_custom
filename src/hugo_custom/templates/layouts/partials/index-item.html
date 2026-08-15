@@ -3,5 +3,5 @@
     {{- partial "index-item.html" . }}
   {{- end }}
 {{- else }}
-<li><a href="{{ .href }}">{{ .text }}</a></li>
+<li><a href="{{ strings.TrimPrefix "/" .href | relURL }}">{{ .text }}</a></li>
 {{- end }}

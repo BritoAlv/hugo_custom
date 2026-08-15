@@ -9,8 +9,8 @@
 </li>
 {{- else if ne .entry.kind "file" }}
 <li class="sidebar-item">
-  <a href="{{ .entry.href }}"{{ if eq .entry.href $.current }} class="active"{{ end }}>
-    {{- with .entry.icon }}<img class="sidebar-file-icon" src="/icons/{{ . }}.svg" alt="" />{{ end }}
+  <a href="{{ strings.TrimPrefix "/" .entry.href | relURL }}"{{ if eq (strings.TrimPrefix "/" .entry.href | relURL) $.current }} class="active"{{ end }}>
+    {{- with .entry.icon }}<img class="sidebar-file-icon" src="{{ printf "icons/%s.svg" . | relURL }}" alt="" />{{ end }}
     <span class="menu-text">{{ .entry.text }}</span>
   </a>
 </li>
