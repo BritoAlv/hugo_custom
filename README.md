@@ -2,9 +2,32 @@
 
 ## What Problem This Solves?
 
-Let's say you have a folder with your notes, *.md*, code, etc, and you would like to put all of that in a website where references across the content work, and it can be deployed, so anyone can read it. A tool like Hugo does precisely this, but to add features or customization, something extra is needed.
+Let's say you have a folder with your notes, *.md*, code, etc, and you would like to put all of that in a website where references across the content work, and it can be deployed, so anyone can read it. For this purposes there a lot of static site generators, I'm using [Hugo](https://github.com/gohugoio/hugo) as a static site generator. 
 
-## What It Is?
+The idea is take a folder with content (.md, code files, video, etc) and turn it into a static web site, with the following features: 
+  
+  - Each code file has its own page, so they are treated like .md files. 
+  - References between markdowns work on the site.
+  - Videos can be played.
+  - Inside the folder, gitignores are considered.
+  - Offline after all the assets are downloaded.
+  - Avoid extra code for plugins, use Hugo ecosystem. 
+
+To achieve this the idea is that a processor read the content folder passed to it, transform it into something ready as input for Hugo, and feed it to Hugo, Hugo output is the site.
+
+```mermaid
+flowchart LR
+    A["Content folder<br>(md, code, notebooks)"] -->|read| B["Processor<br>(hugo-custom)"]
+    B -->|transform| C["Hugo input<br>(staged project)"]
+    C -->|feed| D["Hugo"]
+    D -->|render| E["Static site"]
+```
+
+## AI Generated Section
+
+At this moment, the code is AI generated, seems to work, but I have to review it at some moment.
+
+### What It Is?
 
 A generic Hugo pipeline that turns **a folder of Markdown, notebooks and code** into a fully self-contained static website: staged Hugo project,
 rendered site, vendored KaTeX, local fonts, per-extension file icons, tags
@@ -16,15 +39,15 @@ configuration is developed inside the content repo; the pipeline generates a
 complete Hugo project (content, layouts, static assets, `hugo.toml`) in the
 `stage` directory and renders it with Hugo.
 
-## Requirements
+### Requirements
 
 - [uv](https://docs.astral.sh/uv/)
 - [Hugo](https://gohugo.io/installation/) (extended edition, 0.165+)
 - git
 
-## Quick start
+### Quick start
 
-### 1. Add `hugo_custom_site.toml` to your repo root
+#### 1. Add `hugo_custom_site.toml` to your repo root
 
 The tool locates this file automatically by walking up from the current
 directory, so it must sit at the top of the repo:
@@ -43,7 +66,7 @@ The site title/URL and every visual or behavior option live here. See
 [Configuration](#configuration) for the full reference, and
 `examples/hugo_custom_site.toml` for a commented template.
 
-### 2. Ignore the generated output
+#### 2. Ignore the generated output
 
 Add this to the repo `.gitignore` — the stage and output dirs are fully
 regenerated on every build:
@@ -60,7 +83,7 @@ they are configuration. Since the pipeline uses this `.gitignore` to decide
 what gets published from `source/`, these entries double as build-noise
 exclusions.
 
-### 3. Preview locally
+#### 3. Preview locally
 
 ```bash
 cd /path/to/content-repo
@@ -72,7 +95,7 @@ uvx --from /path/to/hugo_custom hugo-custom --preview
 This stages the site and starts Hugo's dev server with hot reload
 (Ctrl-C to stop). Open the printed URL.
 
-### 4. Build for production locally
+#### 4. Build for production locally
 
 ```bash
 cd /path/to/content-repo
@@ -83,7 +106,7 @@ uvx --from /path/to/hugo_custom hugo-custom --deploy
 
 Deploy mode is stricter: it applies `.siteignore` exclusions.
 
-### Offline use
+#### Offline use
 
 Everything works without network after an initial warm-up run:
 
@@ -94,7 +117,7 @@ Everything works without network after an initial warm-up run:
   [Caching](#caching)); later builds reuse the cache.
 - `uv` caches the package build too, so the second run is fully offline.
 
-### 5. Deploy on GitHub Pages
+#### 5. Deploy on GitHub Pages
 
 1. In your repo: **Settings → Pages → Source: GitHub Actions**.
 2. Add `.github/workflows/deploy.yml` to your content repo:
@@ -124,7 +147,7 @@ jobs:
 3. Push. The reusable workflow installs Hugo + uv, runs the deploy build via
    `uvx`, and uploads `site/` to Pages.
 
-## Configuration
+### Configuration
 
 `hugo_custom_site.toml` — all keys optional unless noted:
 
@@ -155,7 +178,7 @@ description = "My site"
 
 `cache-dir` also honors the `HUGO_CUSTOM_CACHE` environment variable.
 
-## Content conventions
+### Content conventions
 
 The pipeline treats the folder tree under `source/` as the site structure:
 
@@ -192,7 +215,7 @@ Exclusions:
 
   (Use paths relative to the repo root, e.g. `self/async_rust/`.)
 
-## Testing (this repo)
+### Testing (this repo)
 
 This repository is its own test bed: it publishes itself to
 [britoalv.github.io/hugo_custom/](https://britoalv.github.io/hugo_custom/).
@@ -208,7 +231,7 @@ This repository is its own test bed: it publishes itself to
   with `package: .`, so the deployed site is built from the exact commit that
   triggered it (dogfooding).
 
-## What the pipeline does
+### What the pipeline does
 
 1. **Collect** — walk `source/`, apply ignore specs (`.gitignore` +
    nested + `siteignore` on deploy).
@@ -225,7 +248,7 @@ Vendored assets (KaTeX tarball, Google Fonts woff2, vscode-icons SVGs) are
 downloaded on first use and cached, so builds are fast and work offline after
 the first run.
 
-## Caching
+### Caching
 
 Vendored assets live in `$XDG_CACHE_HOME/hugo_custom` (default
 `~/.cache/hugo_custom`), overridable per site with `cache-dir` in
@@ -234,7 +257,7 @@ environment variable.
 To share a warm cache across machines (CI, new laptop), copy that directory
 or point both at a shared location.
 
-## Development
+### Development
 
 Iterate locally with `uv run` — it always rebuilds from the current source
 (`uvx --from .` caches by name+version, so after code changes it needs a
