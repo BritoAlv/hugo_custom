@@ -2,6 +2,10 @@
 <script src="{{ "vendor/mermaid/mermaid.min.js" | relURL }}"></script>
 <script src="{{ "js/mermaid-init.js" | relURL }}"></script>
 {{- end }}
+{{- if .Store.Get "hasGraph" }}
+<script src="{{ "vendor/echarts/echarts.min.js" | relURL }}"></script>
+<script src="{{ "js/graph.js" | relURL }}"></script>
+{{- end }}
 <script src="{{ "vendor/katex/katex.min.js" | relURL }}"></script>
 <script src="{{ "vendor/katex/contrib/auto-render.min.js" | relURL }}"></script>
 <script src="{{ "js/katex-render.js" | relURL }}"></script>

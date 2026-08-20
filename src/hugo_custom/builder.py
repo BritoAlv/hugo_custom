@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import posixpath
 import re
 import shutil
 import subprocess
@@ -18,6 +19,7 @@ from hugo_custom.assets import (
     EXT_ICONS,
     LANGS,
     LOCK_ICONS,
+    ensure_echarts,
     ensure_file_icons,
     ensure_fonts,
     ensure_katex,
@@ -44,6 +46,8 @@ TEMPLATES = PACKAGE_DIR / "templates"
 CODE_OUTPUT_DIR = "codeview"
 
 PREVIEW_OUTPUT_DIR = "preview"
+
+GRAPH_PAGE = "graph.md"
 
 PREVIEW_KINDS = {
     ".svg": "svg",
@@ -87,6 +91,41 @@ def lan_ip() -> str:
 
 FENCE_RE = re.compile(r"^\s*(```|~~~)")
 LINK_RE = re.compile(r"\]\(([^)]+)\)")
+
+
+def extract_refs(body: str, base_dir: str) -> set[str]:
+    """Collect internal reference destinations (raw rel paths, normalized)
+    from markdown `body`, resolved from `base_dir`. Skips fenced code blocks
+    and external/absolute/anchor destinations, mirroring `rebase_links` and
+    the render-link.html hook's scope. Fragment/query suffixes are dropped."""
+    refs: set[str] = set()
+    out = []
+    in_fence = ""
+    for line in body.splitlines(keepends=True):
+        fence = FENCE_RE.match(line)
+        if fence:
+            marker = fence.group(1)
+            if not in_fence:
+                in_fence = marker
+            elif line.strip().startswith(marker):
+                in_fence = ""
+        if not in_fence:
+            out.append(line)
+    for line in out:
+        for match in LINK_RE.finditer(line):
+            dest = match.group(1).strip()
+            if dest[0:1] in ("#", "/") or dest.startswith(
+                ("http://", "https://", "mailto:", "data:")
+            ):
+                continue
+            head = re.split(r"[#?]", dest, 1)[0].strip()
+            if not head:
+                continue
+            rel = posixpath.normpath(posixpath.join(base_dir or ".", head))
+            if rel in ("", ".", "..") or rel.startswith("../"):
+                continue
+            refs.add(rel)
+    return refs
 
 
 def rebase_links(body: str, base_dir: str) -> str:
@@ -152,6 +191,8 @@ class Builder:
         self.published = collect(site, self.specs)
         self.published_rels = {rel_of(site, p) for p in self.published}
         self.pages: list[tuple[str, list[str], str]] = []
+        self.nodes: dict[str, dict] = {}
+        self.links: dict[str, set[str]] = {}
 
     # ---------- staging ----------
 
@@ -180,16 +221,20 @@ class Builder:
             else:
                 static_expected.add(urel)
                 self.copy_raw(src)
+                self.register_node(rel, src.name)
                 if src.suffix.lower() in PREVIEW_KINDS:
                     content_expected.add(f"{PREVIEW_OUTPUT_DIR}/{urel}.md")
                     self.write_preview(src)
         home_staged = self.stage_homepage()
         if home_staged:
             content_expected.add("_index.md")
+        if self.site.params.get("graph", True):
+            content_expected.add(GRAPH_PAGE)
         self.clean_content(content_expected)
         self.clean_static(static_expected)
         self.stage_assets()
         self.stage_sidebar()
+        self.stage_graph()
         self.stage_config()
 
     def stage_homepage(self) -> bool:
@@ -218,6 +263,11 @@ class Builder:
             meta = {}
         meta.setdefault("title", site.title)
         meta.pop("rel", None)
+        if self.site.params.get("graph", True):
+            self.nodes.setdefault(
+                "/", {"label": meta.get("title") or site.title, "kind": "md"}
+            )
+            self.add_refs(rel, body, source="/")
         body = rebase_links(body, str(Path(rel).parent))
         self.apply_git_meta(src, meta)
         write_if_changed(
@@ -268,6 +318,8 @@ class Builder:
             if title:
                 meta["title"] = title
         self.pages.append((rel, tags, created or ""))
+        self.register_node(rel, meta.get("title") or src.stem)
+        self.add_refs(rel, body)
         write_if_changed(
             site.stage / "content" / url_rel(rel), front_matter(meta) + body
         )
@@ -299,6 +351,8 @@ class Builder:
             meta["image"] = f"{site.site_url}og/{slugify(parts[0])}.png"
         self.pages.append((rel, tags, created or ""))
         body = ipynb_to_markdown(nb)
+        self.register_node(rel, meta.get("title") or src.stem)
+        self.add_refs(rel, body)
         write_if_changed(
             site.stage / "content" / f"{url_rel(rel)}.md", front_matter(meta) + body
         )
@@ -324,6 +378,7 @@ class Builder:
             front_matter(meta),
         )
         self.pages.append((f"{CODE_OUTPUT_DIR}/{rel}", [], ""))
+        self.register_node(rel_of(site, src), src.name)
 
     def write_preview(self, src: Path) -> None:
         site = self.site
@@ -354,6 +409,105 @@ class Builder:
             front_matter(meta) + body,
         )
         self.pages.append((f"{PREVIEW_OUTPUT_DIR}/{rel}", [], ""))
+        self.register_node(rel_of(site, src), src.name)
+
+    # ---------- reference graph ----------
+
+    def page_url(self, rel: str) -> str | None:
+        """Map a published file's rel path to its final site URL using the
+        same rules as render-link.html (and `tree`). None when not published."""
+        if rel not in self.published_rels:
+            return None
+        ext = Path(rel).suffix.lower()
+        urel = url_rel(rel)
+        if ext == ".md":
+            return "/" + urel[: -len(".md")] + "/"
+        if ext == ".ipynb":
+            return "/" + urel + "/"
+        if ext in CODE_EXTENSIONS:
+            return f"/{CODE_OUTPUT_DIR}/{urel}/"
+        if ext in PREVIEW_KINDS:
+            return f"/{PREVIEW_OUTPUT_DIR}/{urel}/"
+        return "/" + urel
+
+    def node_kind(self, rel: str) -> str:
+        ext = Path(rel).suffix.lower()
+        if ext == ".md":
+            return "md"
+        if ext == ".ipynb":
+            return "nb"
+        if ext in CODE_EXTENSIONS:
+            return "code"
+        return "file"
+
+    def register_node(self, rel: str, label: str) -> None:
+        url = self.page_url(rel)
+        if url is None:
+            return
+        self.nodes.setdefault(url, {"label": label, "kind": self.node_kind(rel)})
+
+    def add_refs(self, rel: str, body: str, source: str | None = None) -> None:
+        """Extract internal references from `body` (a page rendered at
+        `rel`) and record edges to their resolved target URLs."""
+        if source is None:
+            source = self.page_url(rel)
+        if source is None:
+            return
+        targets: set[str] = set()
+        for ref in extract_refs(body, str(Path(rel).parent)):
+            target = self.page_url(ref)
+            if target is None:
+                if Path(ref).suffix.lower() in (
+                    ".md",
+                    ".ipynb",
+                    *CODE_EXTENSIONS,
+                    *PREVIEW_KINDS,
+                ):
+                    print(
+                        f"warning: unresolved reference from {rel!r} to {ref!r} "
+                        "(not published in this build)",
+                        file=sys.stderr,
+                    )
+                continue
+            if target == source:
+                continue
+            targets.add(target)
+        if targets:
+            self.links.setdefault(source, set()).update(targets)
+
+    def graph_payload(self) -> dict:
+        degrees: dict[str, int] = {}
+        links: list[dict] = []
+        for source, targets in self.links.items():
+            for target in targets:
+                links.append({"source": source, "target": target})
+                degrees[source] = degrees.get(source, 0) + 1
+                degrees[target] = degrees.get(target, 0) + 1
+        nodes = [
+            {
+                "id": url,
+                "label": node["label"],
+                "kind": node["kind"],
+                "degree": degrees.get(url, 0),
+            }
+            for url, node in sorted(self.nodes.items())
+        ]
+        links.sort(key=lambda l: (l["source"], l["target"]))
+        return {"nodes": nodes, "links": links}
+
+    def stage_graph(self) -> None:
+        """Write the graph data consumed by the /graph/ page and stage the
+        page itself. A no-op when disabled via `[params] graph = false`."""
+        if not self.site.params.get("graph", True):
+            return
+        write_if_changed(
+            self.site.stage / "static" / "js" / "graph-data.json",
+            json.dumps(self.graph_payload(), indent=2),
+        )
+        write_if_changed(
+            self.site.stage / "content" / GRAPH_PAGE,
+            front_matter({"title": "Graph", "type": "graph"}),
+        )
 
     def copy_raw(self, src: Path) -> None:
         site = self.site
@@ -436,6 +590,15 @@ class Builder:
             shutil.copytree(
                 mermaid, stage / "static" / "vendor" / "mermaid", dirs_exist_ok=True
             )
+        if site.params.get("graph", True):
+            echarts = ensure_echarts(site.vendor)
+            if echarts is not None:
+                shutil.copytree(
+                    echarts,
+                    stage / "static" / "vendor" / "echarts",
+                    dirs_exist_ok=True,
+                )
+        shutil.rmtree(stage / "static" / "vendor" / "d3", ignore_errors=True)
         fonts = ensure_fonts(site.vendor)
         shutil.copytree(
             fonts, stage / "static" / "vendor" / "fonts", dirs_exist_ok=True
@@ -559,6 +722,8 @@ class Builder:
         for kind, name, href, icon in page_files:
             out.append(file_entry(kind, name, href, icon))
         out.append({"href": "/tags/", "text": "Tags"})
+        if self.site.params.get("graph", True):
+            out.append({"href": "/graph/", "text": "Graph"})
         return out
 
     def stage_sidebar(self) -> None:

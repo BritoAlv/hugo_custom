@@ -19,6 +19,12 @@ MERMAID_URLS = [
     f"https://unpkg.com/mermaid@{MERMAID_VERSION}/dist/mermaid.min.js",
 ]
 
+ECHARTS_VERSION = "5.6.0"
+ECHARTS_URLS = [
+    f"https://cdn.jsdelivr.net/npm/echarts@{ECHARTS_VERSION}/dist/echarts.min.js",
+    f"https://unpkg.com/echarts@{ECHARTS_VERSION}/dist/echarts.min.js",
+]
+
 ICON_BASE = "https://cdn.jsdelivr.net/gh/vscode-icons/vscode-icons@master/icons/"
 
 ICON_ALT_BASE = "https://raw.githubusercontent.com/PKief/vscode-material-icon-theme/main/icons/"
@@ -230,6 +236,46 @@ def ensure_mermaid(vendor: Path) -> Path | None:
     shutil.rmtree(cache, ignore_errors=True)
     os.replace(tmp, cache)
     print(f"fetched Mermaid {MERMAID_VERSION} into {cache}")
+    return cache
+
+
+def ensure_echarts(vendor: Path) -> Path | None:
+    """Return a directory with the pinned ECharts UMD bundle, downloading and
+    caching if needed. Returns None when the bundle cannot be fetched — the
+    site still builds, the graph page just stays unrendered."""
+    cache = vendor / "echarts"
+    marker = cache / "version.txt"
+    if (
+        (cache / "echarts.min.js").is_file()
+        and marker.is_file()
+        and marker.read_text(encoding="utf-8").strip() == ECHARTS_VERSION
+    ):
+        return cache
+    tmp = cache.with_suffix(".tmp")
+    shutil.rmtree(tmp, ignore_errors=True)
+    tmp.mkdir(parents=True)
+    data = None
+    last_exc: Exception | None = None
+    for url in ECHARTS_URLS:
+        try:
+            with urllib.request.urlopen(url, timeout=120) as resp:
+                data = resp.read()
+            break
+        except OSError as exc:
+            last_exc = exc
+    if data is None or not data.strip():
+        shutil.rmtree(tmp, ignore_errors=True)
+        print(
+            f"warning: ECharts assets are not cached in {cache} and fetching "
+            f"from {', '.join(ECHARTS_URLS)} failed: {last_exc}",
+            file=sys.stderr,
+        )
+        return None
+    (tmp / "echarts.min.js").write_bytes(data)
+    (tmp / "version.txt").write_text(ECHARTS_VERSION, encoding="utf-8")
+    shutil.rmtree(cache, ignore_errors=True)
+    os.replace(tmp, cache)
+    print(f"fetched ECharts {ECHARTS_VERSION} into {cache}")
     return cache
 
 

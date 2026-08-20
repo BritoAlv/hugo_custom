@@ -1,0 +1,26 @@
+{{ define "main" }}
+{{- .Page.Store.Set "hasGraph" true }}
+<article class="page graph-page">
+  <h1 class="page-title">{{ .Title }}</h1>
+  <p class="graph-hint">
+    Every published file is a node; an edge links content A to content B when
+    A references B. Drag nodes to explore, scroll to zoom, click a node to open
+    it.
+  </p>
+  <div class="graph-controls">
+    <div class="graph-filters">
+      {{- range (slice (dict "kind" "md" "label" "Pages") (dict "kind" "nb" "label" "Notebooks") (dict "kind" "code" "label" "Code") (dict "kind" "file" "label" "Assets")) }}
+      <label class="graph-filter">
+        <input type="checkbox" class="graph-kind" value="{{ .kind }}" checked>
+        <span class="graph-dot graph-dot-{{ .kind }}"></span> {{ .label }}
+      </label>
+      {{- end }}
+    </div>
+    <div class="graph-actions">
+      <button id="graph-reset" type="button">Reset view</button>
+    </div>
+    <span class="graph-counts" id="graph-counts"></span>
+  </div>
+  <div id="graph-container" class="graph-container" role="img" aria-label="Reference graph" data-graph="{{ "js/graph-data.json" | relURL }}"></div>
+</article>
+{{ end }}

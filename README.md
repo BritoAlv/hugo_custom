@@ -15,6 +15,8 @@ The idea is take a folder with content (.md, code files, video, etc) and turn it
   - Collapsible sidebar tree with auto-expanded active branch.
   - Right-side table of contents that highlights the section you're reading.
   - Light/dark theme toggle that remembers your choice. 
+  - Obsidian-style graph page showing how content references each other. 
+  - Git metadata on pages (last commit hash, author and date) when the content is tracked by git. 
 
 To achieve this the idea is that a processor read the content folder passed to it, transform it into something ready as input for Hugo, and feed it to Hugo, Hugo output is the site.
 
@@ -240,6 +242,10 @@ The pipeline treats the folder tree under `source/` as the site structure:
   `## Keywords` sections (see [Tags](#tags) below). Dates are taken from git
   history (`date` from the first commit, `lastmod` from the last). Front
   matter is preserved and enriched; the first H1 becomes the page title.
+  When a file is tracked by git, the page footer shows the **last commit**
+  (short hash, author and date); untracked files fall back to the
+  filesystem modification time. Pages without any git history get no
+  metadata.
 - **Jupyter notebooks** (`.ipynb`): converted to static Markdown pages —
   markdown cells pass through, code cells become highlighted blocks and the
   stored outputs (text/images) are kept as-is. Notebooks are **not**
@@ -349,6 +355,31 @@ Rules:
   unchanged; external links get `rel="noopener"`.
 
 `examples/references/` in this repo is a working demo of every case above.
+
+#### Reference graph
+
+Every build emits a `Graph` page (`/graph/`) reachable from the sidebar: an
+interactive force-directed map of the whole site, Obsidian-style. Each
+published file is a node (color-coded by kind: page, notebook, code, asset)
+and content A is connected to content B when A references B. The graph is
+built at stage time by scanning markdown and notebook bodies for relative
+links and resolving them with the same rules as the render hook above.
+
+The page lets you drag nodes, scroll to zoom, pan, reset the view, and filter
+node kinds (pages / notebooks / code / assets). Hovering a node highlights its
+neighbors; clicking opens the node's page.
+Broken internal references (links to files not published in this build) are
+reported as warnings during staging.
+
+Visualization uses the ECharts graph series (force layout), vendored and cached
+like the other assets (first build fetches it, later builds are offline). Set
+`graph = false` under `[params]` in `hugo_custom_site.toml` to disable the
+page:
+
+```toml
+[params]
+graph = false
+```
 
 ### Testing (this repo)
 
