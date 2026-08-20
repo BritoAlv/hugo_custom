@@ -12,7 +12,7 @@
     {{- end }}
   </ul>
 </li>
-{{- else if ne .entry.kind "file" }}
+{{- else }}
 <li class="sidebar-item">
   <a href="{{ strings.TrimPrefix "/" .entry.href | relURL }}"{{ if eq (strings.TrimPrefix "/" .entry.href | relURL) $.current }} class="active"{{ end }}>
     {{- with .entry.icon }}<img class="sidebar-file-icon" src="{{ printf "icons/%s.svg" . | relURL }}" alt="" />{{ end }}

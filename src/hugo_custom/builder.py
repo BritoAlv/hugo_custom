@@ -27,6 +27,7 @@ from hugo_custom.config import SiteConfig, deep_merge
 from hugo_custom.files import collect, load_specs, rel_of, url_rel
 from hugo_custom.git import git_date
 from hugo_custom.markdown import (
+    csv_to_markdown,
     extract_tags,
     front_matter,
     humanize,
@@ -40,6 +41,36 @@ PACKAGE_DIR = Path(__file__).resolve().parent
 TEMPLATES = PACKAGE_DIR / "templates"
 
 CODE_OUTPUT_DIR = "codeview"
+
+PREVIEW_OUTPUT_DIR = "preview"
+
+PREVIEW_KINDS = {
+    ".svg": "svg",
+    ".png": "image",
+    ".jpg": "image",
+    ".jpeg": "image",
+    ".gif": "image",
+    ".webp": "image",
+    ".ico": "image",
+    ".bmp": "image",
+    ".mp4": "video",
+    ".webm": "video",
+    ".mov": "video",
+    ".mkv": "video",
+    ".avi": "video",
+    ".ogv": "video",
+    ".mp3": "audio",
+    ".wav": "audio",
+    ".ogg": "audio",
+    ".flac": "audio",
+    ".m4a": "audio",
+    ".pdf": "pdf",
+    ".csv": "csv",
+    ".xml": "text",
+    ".txt": "text",
+    ".ini": "text",
+    ".cfg": "text",
+}
 
 
 def lan_ip() -> str:
@@ -148,6 +179,9 @@ class Builder:
             else:
                 static_expected.add(urel)
                 self.copy_raw(src)
+                if src.suffix.lower() in PREVIEW_KINDS:
+                    content_expected.add(f"{PREVIEW_OUTPUT_DIR}/{urel}.md")
+                    self.write_preview(src)
         home_staged = self.stage_homepage()
         if home_staged:
             content_expected.add("_index.md")
@@ -281,6 +315,35 @@ class Builder:
         )
         self.pages.append((f"{CODE_OUTPUT_DIR}/{rel}", [], ""))
 
+    def write_preview(self, src: Path) -> None:
+        site = self.site
+        rel = url_rel(rel_of(site, src))
+        kind = PREVIEW_KINDS[src.suffix.lower()]
+        # With pretty URLs the preview page lives at /preview/<rel>/, one
+        # level deeper than the raw file's directory.
+        page_dir = os.path.join(
+            PREVIEW_OUTPUT_DIR, str(Path(rel).parent), Path(rel).name
+        )
+        download = os.path.relpath(rel, page_dir)
+        meta = {
+            "title": src.name,
+            "rel": rel,
+            "kind": kind,
+            "download": download,
+        }
+        body = ""
+        if kind in ("csv", "text"):
+            try:
+                text = src.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                text = ""
+            body = csv_to_markdown(text) if kind == "csv" else f"```text\n{text}\n```"
+        write_if_changed(
+            site.stage / "content" / PREVIEW_OUTPUT_DIR / f"{rel}.md",
+            front_matter(meta) + body,
+        )
+        self.pages.append((f"{PREVIEW_OUTPUT_DIR}/{rel}", [], ""))
+
     def copy_raw(self, src: Path) -> None:
         site = self.site
         dst = site.stage / "static" / url_rel(rel_of(site, src))
@@ -331,7 +394,7 @@ class Builder:
             return EXT_ICONS[".ipynb"]
         if ext in CODE_EXTENSIONS:
             return LOCK_ICONS.get(src.name) or EXT_ICONS.get(ext, DEFAULT_ICON)
-        return None
+        return EXT_ICONS.get(ext, DEFAULT_ICON)
 
     def stage_assets(self) -> None:
         site = self.site
@@ -438,7 +501,15 @@ class Builder:
                 icon = LOCK_ICONS.get(p.name) or EXT_ICONS.get(ext, DEFAULT_ICON)
                 add(parts, "code", f"/{CODE_OUTPUT_DIR}/{rel}/", icon)
             else:
-                add(parts, "file", "/" + rel, None)
+                if ext in PREVIEW_KINDS:
+                    add(
+                        parts,
+                        "file",
+                        f"/{PREVIEW_OUTPUT_DIR}/{rel}/",
+                        EXT_ICONS.get(ext) or DEFAULT_ICON,
+                    )
+                else:
+                    add(parts, "file", "/" + rel, EXT_ICONS.get(ext) or DEFAULT_ICON)
         return tree
 
     def sidebar_entries(self) -> list[dict]:
@@ -459,10 +530,8 @@ class Builder:
                 sub = section(humanize(name), child)
                 if sub is not None:
                     entry["contents"].append(sub)
-            page_files = [f for f in node["files"] if f[0] != "file"]
-            for kind, name, href, icon in sorted(
-                page_files, key=lambda f: f[1].lower()
-            ):
+            page_files = sorted(node["files"], key=lambda f: f[1].lower())
+            for kind, name, href, icon in page_files:
                 entry["contents"].append(file_entry(kind, name, href, icon))
             return entry if entry["contents"] else None
 
@@ -470,8 +539,8 @@ class Builder:
             item = section(humanize(name), node)
             if item is not None:
                 out.append(item)
-        page_files = [f for f in tree["files"] if f[0] != "file"]
-        for kind, name, href, icon in sorted(page_files, key=lambda f: f[1].lower()):
+        page_files = sorted(tree["files"], key=lambda f: f[1].lower())
+        for kind, name, href, icon in page_files:
             out.append(file_entry(kind, name, href, icon))
         out.append({"href": "/tags/", "text": "Tags"})
         return out

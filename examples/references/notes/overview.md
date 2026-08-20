@@ -49,13 +49,16 @@ link is rewritten to point at it:
 
 ## Markdown to static assets
 
-Other files (images, data, PDFs) are copied verbatim to the site root and
-served as-is. Their links are **not** rewritten, so write the path relative to
-the page's URL: from `/notes/overview/`, two levels up reach the site root:
+Other files (images, data, PDFs, videos) are copied verbatim to the site root
+and served as-is. Their links point at a `preview/` page that embeds the file
+inline (with a download link), so write the path relative to this file's
+folder: from `notes/`, one level up reaches `references/assets/`:
 
-[../../assets/diagram.svg](../../assets/diagram.svg)
+[../assets/diagram.svg](../assets/diagram.svg)
 
-[../../assets/sample.csv](../../assets/sample.csv)
+[../assets/sample.csv](../assets/sample.csv)
+
+[../assets/sample.mp4](../assets/sample.mp4)
 
 ## External links
 

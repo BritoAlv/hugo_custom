@@ -10,3 +10,4 @@ between files. From here, links are flat paths relative to this folder:
 - [code/main.py](code/main.py)
 - [assets/diagram.svg](assets/diagram.svg)
 - [assets/sample.csv](assets/sample.csv)
+- [assets/sample.mp4](assets/sample.mp4)

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import csv
+import io
 import re
 
 import yaml
@@ -78,6 +80,22 @@ def split_title(body: str) -> tuple[str | None, str]:
         if m and m.group(1).strip():
             return m.group(1).strip(), "\n".join(lines[:i] + lines[i + 1 :])
     return None, body
+
+
+def csv_to_markdown(text: str) -> str:
+    """Render a CSV payload as a markdown table (empty rows skipped)."""
+    rows = [
+        row
+        for row in csv.reader(io.StringIO(text))
+        if any(cell.strip() for cell in row)
+    ]
+    if not rows:
+        return ""
+    out = ["| " + " | ".join(str(c) for c in rows[0]) + " |"]
+    out.append("|" + "|".join("---" for _ in rows[0]) + "|")
+    for row in rows[1:]:
+        out.append("| " + " | ".join(str(c) for c in row) + " |")
+    return "\n".join(out)
 
 
 def ipynb_to_markdown(nb: dict) -> str:

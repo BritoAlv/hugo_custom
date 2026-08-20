@@ -30,6 +30,10 @@
       {{- with site.GetPage (path.Join "codeview" $lookup) }}
         {{- $out = printf "%s%s" .RelPermalink $suffix }}
       {{- end }}
+    {{- else }}
+      {{- with site.GetPage (path.Join "preview" $lookup) }}
+        {{- $out = printf "%s%s" .RelPermalink $suffix }}
+      {{- end }}
     {{- end }}
   {{- end }}
 {{- end }}

@@ -249,7 +249,11 @@ The pipeline treats the folder tree under `source/` as the site structure:
   page is generated for each, showing the file with syntax highlighting and a
   download link; markdown links to code files are rewritten to point at their
   codeview page.
-- **Other files** (images, data, PDFs…): copied verbatim and served as-is.
+- **Other files** (images, videos, audio, PDFs, data…): copied verbatim and
+  served as-is. Those with a browser-embeddable preview (images, videos,
+  audio, PDFs, CSV and text data) get a `preview/` page that embeds the file
+  inline with a download link; markdown links and sidebar entries point at the
+  preview page, and the raw file stays available for download.
 
 Exclusions:
 
@@ -282,7 +286,7 @@ every markdown link at build time. Write a normal markdown link with the
 [anchor](setup.md#requirements)    # anchor preserved -> /notes/setup/#requirements
 [notebook](../notebooks/a.ipynb)   # notebook page    -> /notebooks/a.ipynb/
 [source](../code/main.py)          # code file        -> /codeview/code/main.py/
-[diagram](../../assets/fig.svg)    # raw asset        -> /assets/fig.svg (not rewritten)
+[diagram](../../assets/fig.svg)    # raw asset        -> /preview/assets/fig.svg/ (embedded)
 ```
 
 Rules:
@@ -293,9 +297,11 @@ Rules:
   `.tsx`, `.json`, `.yml`, `.yaml`, `.c`, `.h`, `.cpp`, `.hpp`, `.java`,
   `.go`, `.rb`, `.txt`, `.ini`, `.cfg`, `.sql`, `.html`, `.css`, `.lock`)
   are rewritten to their `codeview/` page.
-- Other files (images, data, PDFs…) are copied verbatim and their links are
-  **not** rewritten — the browser resolves them relative to the page URL, so
-  count the `../` to reach the asset's location (see the examples).
+- Other files (images, videos, audio, PDFs, CSV/text data…) are copied
+  verbatim and served as-is. Those with a browser-embeddable preview get a
+  `preview/` page that embeds the file inline with a download link, and their
+  links are rewritten to it (see the examples). Anything else (archives, …)
+  is linked directly to the raw file.
 - `http(s)://`, `mailto:`, `#anchor` and `/absolute` links pass through
   unchanged; external links get `rel="noopener"`.
 

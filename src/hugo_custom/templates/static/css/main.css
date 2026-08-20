@@ -446,6 +446,28 @@ pre code {
   margin-top: 0;
 }
 
+/* ---- file previews (images, videos, audio, pdfs, data) ---- */
+
+.file-preview {
+  max-width: 100%;
+  margin-top: 1rem;
+}
+
+.file-preview img,
+.file-preview video,
+.file-preview audio {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+
+.file-preview iframe {
+  width: 100%;
+  height: 70vh;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
 /* ---- code copy ---- */
 
 .code-copy-btn {

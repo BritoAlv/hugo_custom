@@ -2,11 +2,28 @@
 <article class="page">
   <h1 class="page-title">{{ .Title }}</h1>
   {{ partial "page-meta.html" . }}
-  {{- with .Params.rel }}
-    {{- $code := "" }}
-    {{- with readFile (printf "static/%s" .) }}{{ $code = . }}{{ end }}
-    <p class="codeview-path"><strong>Path:</strong> <code>{{ . }}</code> · <a href="{{ $.Params.download }}">Download raw file</a></p>
-    {{ highlight $code ($.Params.lang | default "text") "" }}
+  {{- $params := .Params }}
+  {{- with $params.rel }}
+    {{- if $params.kind }}
+      {{- $kind := $params.kind }}
+      <p class="codeview-path"><strong>Path:</strong> <code>{{ . }}</code> · <a href="{{ $params.download }}">Download raw file</a></p>
+      {{- if eq $kind "video" }}
+        <video class="file-preview" controls preload="metadata" src="{{ $params.download }}"></video>
+      {{- else if eq $kind "audio" }}
+        <audio class="file-preview" controls src="{{ $params.download }}"></audio>
+      {{- else if or (eq $kind "image") (eq $kind "svg") }}
+        <img class="file-preview" src="{{ $params.download }}" alt="{{ $.Title }}" />
+      {{- else if eq $kind "pdf" }}
+        <iframe class="file-preview" src="{{ $params.download }}" title="{{ $.Title }}"></iframe>
+      {{- else }}
+        <div class="page-body">{{ $.Content }}</div>
+      {{- end }}
+    {{- else }}
+      {{- $code := "" }}
+      {{- with readFile (printf "static/%s" .) }}{{ $code = . }}{{ end }}
+      <p class="codeview-path"><strong>Path:</strong> <code>{{ . }}</code> · <a href="{{ $params.download }}">Download raw file</a></p>
+      {{ highlight $code ($params.lang | default "text") "" }}
+    {{- end }}
   {{- else }}
     {{- $toc := .TableOfContents }}
     {{- if strings.Contains $toc "<ul" }}
