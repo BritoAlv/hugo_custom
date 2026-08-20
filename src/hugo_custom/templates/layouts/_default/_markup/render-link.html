@@ -15,7 +15,7 @@
   {{- end }}
   {{- if $head }}
     {{- $ext := path.Ext $head }}
-    {{- $lookup := delimit (apply (split (path.Join page.File.Dir $head) "/") "strings.TrimPrefix" "." ".") "/" }}
+    {{- $lookup := replaceRE "(^|/)\\." "${1}" (path.Join page.File.Dir $head) }}
     {{- if eq $ext ".md" }}
       {{- with site.GetPage (strings.TrimSuffix ".md" $lookup) }}
         {{- $out = printf "%s%s" .RelPermalink $suffix }}

@@ -2,12 +2,12 @@
 
 ## What Problem This Solves?
 
-Let's say you have a folder with your notes, *.md*, code, etc, and you would like to put all of that in a website where references across the content work, and it can be deployed, so anyone can read it. For this purposes there a lot of static site generators, I'm using [Hugo](https://github.com/gohugoio/hugo) as a static site generator. 
+Let's say you have a folder with your notes, *.md*, code, etc, and you would like to put all of that in a website where references across the content work, and it can be deployed, so anyone can read it. This is one of the applications of static site generators. I'm using [Hugo](https://github.com/gohugoio/hugo) SSG. 
 
 The idea is take a folder with content (.md, code files, video, etc) and turn it into a static web site, with the following features: 
   
   - Each code file has its own page, so they are treated like .md files. 
-  - References between markdowns work on the site.
+  - References between files work on the site.
   - Videos can be played.
   - Inside the folder, gitignores are considered.
   - Offline after all the assets are downloaded.
@@ -63,8 +63,7 @@ output = "site"           # rendered site (add to .gitignore)
 ```
 
 The site title/URL and every visual or behavior option live here. See
-[Configuration](#configuration) for the full reference, and
-`examples/hugo_custom_site.toml` for a commented template.
+[Configuration](#configuration) for the full reference.
 
 #### 2. Ignore the generated output
 
@@ -215,6 +214,38 @@ Exclusions:
 
   (Use paths relative to the repo root, e.g. `self/async_rust/`.)
 
+### References between files
+
+Links across markdown, notebooks and code files work out of the box: a
+custom render hook (`layouts/_default/_markup/render-link.html`) rewrites
+every markdown link at build time. Write a normal markdown link with the
+**real file path relative to the current file's folder, extension included**:
+
+```markdown
+[see setup](setup.md)              # same folder      -> /notes/setup/
+[deep page](deep/subpage.md)       # subfolder        -> /notes/deep/subpage/
+[anchor](setup.md#requirements)    # anchor preserved -> /notes/setup/#requirements
+[notebook](../notebooks/a.ipynb)   # notebook page    -> /notebooks/a.ipynb/
+[source](../code/main.py)          # code file        -> /codeview/code/main.py/
+[diagram](../../assets/fig.svg)    # raw asset        -> /assets/fig.svg (not rewritten)
+```
+
+Rules:
+
+- `.md` and `.ipynb` links are rewritten to the target page's permalink
+  (`#fragments` and `?queries` are preserved).
+- Code files (`.rs`, `.py`, `.toml`, `.sh`, `.bash`, `.js`, `.ts`, `.jsx`,
+  `.tsx`, `.json`, `.yml`, `.yaml`, `.c`, `.h`, `.cpp`, `.hpp`, `.java`,
+  `.go`, `.rb`, `.txt`, `.ini`, `.cfg`, `.sql`, `.html`, `.css`, `.lock`)
+  are rewritten to their `codeview/` page.
+- Other files (images, data, PDFs…) are copied verbatim and their links are
+  **not** rewritten — the browser resolves them relative to the page URL, so
+  count the `../` to reach the asset's location (see the examples).
+- `http(s)://`, `mailto:`, `#anchor` and `/absolute` links pass through
+  unchanged; external links get `rel="noopener"`.
+
+`examples/references/` in this repo is a working demo of every case above.
+
 ### Testing (this repo)
 
 This repository is its own test bed: it publishes itself to
@@ -223,10 +254,11 @@ This repository is its own test bed: it publishes itself to
 - `hugo_custom_site.toml` sets `source = "."` — the pipeline builds a site
   from the repo's own files, exercising code views, file icons, OG images,
   the sidebar tree and generated pages.
-- `ignore` excludes what the pipeline would not render as pages anyway:
-  `.github/` (dot-directories), the root `README.md`, `examples/` and
-  `src/hugo_custom/templates/` (the layouts/config that are copied into the
-  staged project). Excluding them keeps the sidebar free of dead links.
+- `examples/references/` is normal repo content, published as the
+  `examples/references/` section — it doubles as the live demo of
+  [references between files](#references-between-files).
+- `.siteignore` demonstrates deploy-only exclusions: `examples/wip/` shows in
+  local previews but is left out of the deployed site.
 - `.github/workflows/deploy.yml` deploys to Pages using the reusable workflow
   with `package: .`, so the deployed site is built from the exact commit that
   triggered it (dogfooding).

@@ -1,0 +1,4 @@
+# Deploy-only exclusions (gitignore syntax, relative to the repo root).
+# Applied when HUGO_DEPLOY=true (e.g. GitHub Pages); local previews show
+# everything as a full example.
+/examples/wip/
