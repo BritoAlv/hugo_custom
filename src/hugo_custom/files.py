@@ -60,7 +60,7 @@ def collect(
                 kept_dirs.append(d)
         dirnames[:] = kept_dirs
         for f in filenames:
-            if f in (".gitignore", ".siteignore", "__init__.py"):
+            if f in (".gitignore", ".siteignore"):
                 continue
             rel_root = (Path(dirpath) / f).relative_to(site.root).as_posix()
             if not is_ignored(rel_root, specs):
