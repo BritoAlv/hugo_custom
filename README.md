@@ -314,6 +314,9 @@ This repository is its own test bed: it publishes itself to
   [references between files](#references-between-files).
 - `.siteignore` demonstrates deploy-only exclusions: `examples/wip/` shows in
   local previews but is left out of the deployed site.
+- `examples/.gitignore` demonstrates nested gitignore exclusions: the
+  `examples/scratch/` folder is committed (force-added) but never published,
+  in previews or deploys.
 - `.github/workflows/deploy.yml` deploys to Pages using the reusable workflow
   with `package: .`, so the deployed site is built from the exact commit that
   triggered it (dogfooding).

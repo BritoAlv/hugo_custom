@@ -1,0 +1,2 @@
+# nested gitignore demo: `scratch/` is excluded from the published site
+scratch/
