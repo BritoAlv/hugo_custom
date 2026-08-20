@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -41,11 +42,73 @@ TEMPLATES = PACKAGE_DIR / "templates"
 CODE_OUTPUT_DIR = "codeview"
 
 
+def lan_ip() -> str:
+    """Best-effort detection of the machine's primary LAN IPv4 address."""
+    import socket
+
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("8.8.8.8", 80))
+            return s.getsockname()[0]
+    except OSError:
+        return ""
+
+FENCE_RE = re.compile(r"^\s*(```|~~~)")
+LINK_RE = re.compile(r"\]\(([^)]+)\)")
+
+
+def rebase_links(body: str, base_dir: str) -> str:
+    """Rewrite relative link destinations in markdown `body` so they resolve
+    from `base_dir` (the homepage file's original folder). Skips fenced code
+    blocks; absolute, external and fragment-only destinations are left as-is."""
+    if not base_dir:
+        return body
+
+    def rebase(match: re.Match) -> str:
+        dest = match.group(1)
+        if dest[0:1] in ("#", "/") or dest.startswith(
+            ("http://", "https://", "mailto:", "data:")
+        ):
+            return match.group(0)
+        return f"]({base_dir}/{dest})"
+
+    out: list[str] = []
+    in_fence = ""
+    for line in body.splitlines(keepends=True):
+        fence = FENCE_RE.match(line)
+        if fence:
+            marker = fence.group(1)
+            if not in_fence:
+                in_fence = marker
+            elif line.strip().startswith(marker):
+                in_fence = ""
+        if not in_fence:
+            line = LINK_RE.sub(rebase, line)
+        out.append(line)
+    return "".join(out)
+
+
 def write_if_changed(dst: Path, content: str) -> None:
     if dst.is_file() and dst.read_text(encoding="utf-8") == content:
         return
     dst.parent.mkdir(parents=True, exist_ok=True)
     dst.write_text(content, encoding="utf-8")
+
+
+def chroma_css(style: str, prefix: str) -> str:
+    """Generate Chroma CSS for `style` scoped under `prefix` so code colors
+    follow the site's light/dark theme (manual `data-theme` wins over the
+    OS preference, mirroring main.css)."""
+    result = subprocess.run(
+        ["hugo", "gen", "chromastyles", "--style", style],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    css = result.stdout
+    css = css.replace(".chroma", f"{prefix} .chroma")
+    css = css.replace(".bg {", f"{prefix} .bg {{")
+    return css
 
 
 class Builder:
@@ -85,11 +148,46 @@ class Builder:
             else:
                 static_expected.add(urel)
                 self.copy_raw(src)
+        home_staged = self.stage_homepage()
+        if home_staged:
+            content_expected.add("_index.md")
         self.clean_content(content_expected)
         self.clean_static(static_expected)
         self.stage_assets()
         self.stage_sidebar()
         self.stage_config()
+
+    def stage_homepage(self) -> bool:
+        """Stage the configured homepage file as content/_index.md so the
+        site's index page renders it. Returns True when staged."""
+        site = self.site
+        if not site.homepage:
+            return False
+        rel = site.homepage
+        src = site.source / rel
+        if not src.is_file() or src.suffix.lower() != ".md":
+            print(
+                f"warning: homepage file {rel!r} not found in source (must be a .md file)",
+                file=sys.stderr,
+            )
+            return False
+        if rel not in self.published_rels:
+            print(
+                f"warning: homepage file {rel!r} is not published in this build",
+                file=sys.stderr,
+            )
+            return False
+        text = src.read_text(encoding="utf-8")
+        meta, body = split_front_matter(text)
+        if meta is None:
+            meta = {}
+        meta.setdefault("title", site.title)
+        meta.pop("rel", None)
+        body = rebase_links(body, str(Path(rel).parent))
+        write_if_changed(
+            site.stage / "content" / "_index.md", front_matter(meta) + body
+        )
+        return True
 
     def write_page(self, src: Path) -> None:
         site = self.site
@@ -274,6 +372,12 @@ class Builder:
             dst.mkdir(parents=True, exist_ok=True)
             for f in (TEMPLATES / "static" / rel).glob("*"):
                 write_if_changed(dst / f.name, f.read_text(encoding="utf-8"))
+        write_if_changed(
+            stage / "static" / "css" / "chroma.css",
+            chroma_css("github", ':root:not([data-theme="dark"])')
+            + "\n"
+            + chroma_css("github-dark", ':root[data-theme="dark"]'),
+        )
 
     def tree(self) -> dict:
         site = self.site
@@ -350,6 +454,8 @@ class Builder:
         cfg["title"] = site.title
         cfg["baseURL"] = site.site_url
         cfg["params"] = deep_merge(cfg.get("params") or {}, site.params)
+        if site.homepage:
+            cfg["params"]["homepage"] = site.homepage
         write_if_changed(site.stage / "hugo.toml", tomli_w.dumps(cfg))
 
     # ---------- rendering ----------
@@ -367,20 +473,27 @@ class Builder:
         if result.returncode != 0:
             sys.exit(f"hugo build failed with exit code {result.returncode}")
 
-    def preview(self) -> None:
+    def preview(self, host: str = "127.0.0.1") -> None:
         site = self.site
-        subprocess.run(
-            [
-                "hugo",
-                "server",
-                "--source",
-                str(site.stage),
-                "--destination",
-                str(site.output),
-            ],
-            cwd=site.root,
-            check=False,
-        )
+        cmd = [
+            "hugo",
+            "server",
+            "--source",
+            str(site.stage),
+            "--destination",
+            str(site.output),
+            "--bind",
+            host,
+            "--liveReloadPort",
+            "1313",
+        ]
+        if host not in ("127.0.0.1", "localhost"):
+            cmd += ["--baseURL", f"http://{host}:1313"]
+        if host in ("0.0.0.0", ""):
+            ip = lan_ip()
+            if ip:
+                print(f"On your phone (same WiFi), open: http://{ip}:1313/", flush=True)
+        subprocess.run(cmd, cwd=site.root, check=False)
 
     def summary(self) -> None:
         site = self.site

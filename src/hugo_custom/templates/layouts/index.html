@@ -1,17 +1,16 @@
 {{ define "main" }}
-<h1 class="page-title">{{ .Site.Title }}</h1>
-{{- range hugo.Data.sidebar.entries }}
-  {{- if .section }}
-<h2>{{ .section }}</h2>
-<ul>
-  {{- range .contents }}
-    {{- partial "index-item.html" . }}
-  {{- end }}
-</ul>
-  {{- end }}
+{{- $home := site.Params.homepage | default "" }}
+{{- if not $home }}
+<div class="warning">
+  No homepage file configured. Add <code>homepage = "path/to/file.md"</code>
+  to <code>hugo_custom_site.toml</code> to choose the file shown on this page.
+</div>
+{{- else if not (site.GetPage $home) }}
+<div class="warning">
+  <strong>Homepage file not found:</strong> <code>{{ $home }}</code><br />
+  Check the <code>homepage</code> setting in <code>hugo_custom_site.toml</code>.
+</div>
+{{- else }}
+{{ .Content }}
 {{- end }}
-<h2>Site</h2>
-<ul>
-  <li><a href="{{ "tags/" | relURL }}">Tag index</a></li>
-</ul>
 {{ end }}

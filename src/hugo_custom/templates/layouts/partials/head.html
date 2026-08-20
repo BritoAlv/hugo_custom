@@ -24,6 +24,21 @@
 <meta name="twitter:card" content="summary">
 {{- end }}
 <meta name="twitter:title" content="{{ .Title }}">
+<script>
+(function () {
+  try {
+    var theme = null;
+    var saved = localStorage.getItem("hugo-custom-theme");
+    if (saved === "dark" || saved === "light") {
+      theme = saved;
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      theme = "dark";
+    }
+    document.documentElement.setAttribute("data-theme", theme || "light");
+  } catch (e) {}
+})();
+</script>
 <link rel="stylesheet" href="{{ "vendor/fonts/lato.css" | relURL }}">
 <link rel="stylesheet" href="{{ "vendor/katex/katex.min.css" | relURL }}">
 <link rel="stylesheet" href="{{ "css/main.css" | relURL }}">
+<link rel="stylesheet" href="{{ "css/chroma.css" | relURL }}">

@@ -1,7 +1,0 @@
-{{- if .section }}
-  {{- range .contents }}
-    {{- partial "index-item.html" . }}
-  {{- end }}
-{{- else }}
-<li><a href="{{ strings.TrimPrefix "/" .href | relURL }}">{{ .text }}</a></li>
-{{- end }}

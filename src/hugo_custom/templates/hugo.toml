@@ -18,8 +18,12 @@ inline = [["$", "$"]]
 
 [markup.highlight]
 codeFences = true
-noClasses = true
+noClasses = false
 lineNos = false
 style = "github"
+
+[markup.tableOfContents]
+startLevel = 2
+endLevel = 6
 
 [params]

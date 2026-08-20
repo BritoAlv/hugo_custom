@@ -1,0 +1,4 @@
+{{- $toc := .TableOfContents }}
+{{- if strings.Contains $toc "<ul" }}
+{{ $toc | safeHTML }}
+{{- end }}

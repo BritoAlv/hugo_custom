@@ -41,6 +41,14 @@ def main() -> None:
         action="store_true",
         help="stage then run hugo server on the staged project",
     )
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help=(
+            "address hugo server binds to (use your LAN IP or 0.0.0.0 to "
+            "test from a phone on the same WiFi)"
+        ),
+    )
     args = parser.parse_args()
 
     config_path = Path(args.config) if args.config else find_config(Path.cwd())
@@ -57,7 +65,7 @@ def main() -> None:
     if args.stage_only:
         return
     if args.preview:
-        builder.preview()
+        builder.preview(args.host)
     else:
         builder.render()
         builder.summary()

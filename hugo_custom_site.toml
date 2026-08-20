@@ -4,3 +4,4 @@ brand = "HUGO CUSTOM"
 source = "."
 output = "site"
 siteignore = ".siteignore"
+homepage = 'README.md'

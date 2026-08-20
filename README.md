@@ -11,7 +11,10 @@ The idea is take a folder with content (.md, code files, video, etc) and turn it
   - Videos can be played.
   - Inside the folder, gitignores are considered.
   - Offline after all the assets are downloaded.
-  - Avoid extra code for plugins, use Hugo ecosystem. 
+  - Avoid extra code for plugins, use Hugo ecosystem.
+  - Collapsible sidebar tree with auto-expanded active branch.
+  - Right-side table of contents that highlights the section you're reading.
+  - Light/dark theme toggle that remembers your choice. 
 
 To achieve this the idea is that a processor read the content folder passed to it, transform it into something ready as input for Hugo, and feed it to Hugo, Hugo output is the site.
 
@@ -94,6 +97,18 @@ uvx --from /path/to/hugo_custom hugo-custom --preview
 This stages the site and starts Hugo's dev server with hot reload
 (Ctrl-C to stop). Open the printed URL.
 
+To test from a phone or another device on the same network, bind the
+server to your LAN and open the printed address:
+
+```bash
+hugo-custom --preview --host 0.0.0.0
+# On your phone (same WiFi), open: http://<lan-ip>:1313/
+```
+
+Passing your LAN IP directly works too (`--host 192.168.1.50`). The
+`--host` flag is forwarded to Hugo's `--bind`, and live-reload's baseURL
+follows the address. The default is `127.0.0.1` (localhost only).
+
 #### 4. Build for production locally
 
 ```bash
@@ -161,6 +176,7 @@ jobs:
 | `siteignore` | none | Path to a deploy-only ignore file (see below) |
 | `ignore` | `[]` | Always-applied exclusion patterns (gitignore syntax) |
 | `cache-dir` | `$XDG_CACHE_HOME/hugo_custom` | Where vendored assets are cached |
+| `homepage` | none | Source file rendered on the site's index page (see below) |
 | `[params]` | none | Extra keys merged into the Hugo `params` section |
 
 The built-in template (`src/hugo_custom/templates/hugo.toml`) provides the
@@ -176,6 +192,40 @@ description = "My site"
 ```
 
 `cache-dir` also honors the `HUGO_CUSTOM_CACHE` environment variable.
+
+### Homepage
+
+By default the index page shows a warning asking for a homepage file. Set
+`homepage` to the path of a file under `source/` to render it instead:
+
+```toml
+homepage = "README.md"
+```
+
+The file is rendered in its own page context (relative links, heading IDs
+and the right-side table of contents all work). If the file is missing, a
+warning is shown on the index page and at build time.
+
+### Navigation and theme
+
+These are built into the generated template (`templates/static/css` and
+`templates/static/js`), no configuration needed:
+
+- **Sidebar tree** — the site structure is shown as a collapsible tree with
+  SVG arrows and rounded connector lines. Folders stay collapsed/expanded
+  across visits (`localStorage`), and the branch of the current page opens
+  automatically.
+- **Right table of contents** — pages with headings get a sticky TOC rail
+  on wide screens (the same contents appear as a collapsible box on mobile).
+  As you scroll, the current section is highlighted and kept in view
+  (`toc.js`, IntersectionObserver). Nested headings are indented with the
+  same tree shapes as the sidebar. TOC depth follows Hugo's
+  `[markup.tableOfContents]` setting (default h2–h6).
+- **Theme toggle** — the sun/moon button in the header switches between
+  light and dark; your choice is remembered (`localStorage`, key
+  `hugo-custom-theme`). Without a saved choice the OS preference is used.
+  Code highlighting follows the theme via a scoped Chroma stylesheet
+  generated at build time.
 
 ### Content conventions
 

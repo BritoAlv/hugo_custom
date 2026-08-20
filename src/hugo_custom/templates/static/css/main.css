@@ -7,10 +7,23 @@
   --code-bg: #f6f8fa;
   --header-bg: #f8f9fa;
   --hover-bg: #f3f4f6;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #1e1e1e;
+  --fg: #e8e8e8;
+  --muted: #9ca3af;
+  --accent: #7cb3e8;
+  --border: #3a3a3a;
+  --code-bg: #121212;
+  --header-bg: #252526;
+  --hover-bg: #2d2d2d;
+  color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #1e1e1e;
     --fg: #e8e8e8;
     --muted: #9ca3af;
@@ -19,6 +32,7 @@
     --code-bg: #121212;
     --header-bg: #252526;
     --hover-bg: #2d2d2d;
+    color-scheme: dark;
   }
 }
 
@@ -76,6 +90,7 @@ pre code {
 .site-header-inner {
   max-width: 1400px;
   margin: 0 auto;
+  min-height: 52px;
   padding: 0.6rem 1.5rem;
   display: flex;
   align-items: center;
@@ -90,6 +105,35 @@ pre code {
 }
 
 .site-title:hover { text-decoration: none; }
+
+/* ---- theme toggle ---- */
+
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  padding: 0;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--fg);
+}
+
+.theme-toggle:hover { background: var(--hover-bg); }
+
+.theme-toggle .icon {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.theme-toggle .icon-sun { display: none; }
+
+:root[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+:root[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
 
 /* ---- search ---- */
 
@@ -148,12 +192,38 @@ pre code {
   top: 52px;
   height: calc(100vh - 52px);
   overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
 }
 
 .sidebar-menu {
   list-style: none;
   margin: 0;
   padding: 0;
+}
+
+.sidebar-section-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  width: 100%;
+  margin: 1rem 0 0.25rem;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+.sidebar-arrow {
+  width: 0.72rem;
+  height: 0.72rem;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+  transform-box: fill-box;
+  transform-origin: center;
 }
 
 .sidebar-section-label {
@@ -163,11 +233,52 @@ pre code {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--muted);
-  margin: 1rem 0 0.25rem;
 }
 
-.sidebar-menu .sidebar-menu .sidebar-section-label {
+.sidebar-section.collapsed > .sidebar-menu {
+  display: none;
+}
+
+.sidebar-section.collapsed > .sidebar-section-toggle .sidebar-arrow {
+  transform: rotate(-90deg);
+}
+
+.sidebar-menu .sidebar-menu .sidebar-section-toggle {
   margin-top: 0.5rem;
+}
+
+.sidebar-menu .sidebar-menu {
+  position: relative;
+  margin-left: 0.5rem;
+  padding-left: 0.9rem;
+}
+
+.sidebar-menu .sidebar-menu::before {
+  content: "";
+  position: absolute;
+  left: 0.15rem;
+  top: 0.4rem;
+  bottom: 0.4rem;
+  width: 2px;
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.sidebar-menu .sidebar-menu > li > a,
+.sidebar-menu .sidebar-menu > li > .sidebar-section-toggle {
+  position: relative;
+}
+
+.sidebar-menu .sidebar-menu > li > a::before,
+.sidebar-menu .sidebar-menu > li > .sidebar-section-toggle::before {
+  content: "";
+  position: absolute;
+  left: -0.9rem;
+  top: 50%;
+  width: 0.9rem;
+  height: 2px;
+  background: var(--border);
+  border-radius: 2px;
 }
 
 .sidebar-item a {
@@ -232,6 +343,100 @@ pre code {
 
 .toc ul { margin: 0.5rem 0 0; padding-left: 1.5rem; }
 
+/* ---- right TOC rail (MkDocs-style) ---- */
+
+.toc-rail {
+  display: none;
+  width: 250px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 52px;
+  height: calc(100vh - 52px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding: 1.25rem 1rem;
+  border-left: 1px solid var(--border);
+  font-size: 0.88rem;
+}
+
+.toc-rail ul {
+  list-style: none;
+  margin: 0.25rem 0;
+  padding-left: 0.9rem;
+}
+
+.toc-rail ul ul { margin: 0; }
+
+.toc-rail > ul { padding-left: 0; }
+
+.toc-rail a {
+  display: block;
+  position: relative;
+  padding: 0.18rem 0.4rem;
+  border-radius: 4px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.toc-rail a::before {
+  content: "";
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  margin-right: 0.35rem;
+  vertical-align: -0.05rem;
+  background-color: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2.5 3.5 L5 6.5 L7.5 3.5' fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2.5 3.5 L5 6.5 L7.5 3.5' fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.toc-rail ul ul {
+  position: relative;
+  margin-left: 0.5rem;
+  padding-left: 0.9rem;
+}
+
+.toc-rail ul ul::before {
+  content: "";
+  position: absolute;
+  left: 0.15rem;
+  top: 0.4rem;
+  bottom: 0.4rem;
+  width: 2px;
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.toc-rail ul ul > li { position: relative; }
+
+.toc-rail ul ul > li > a::after {
+  content: "";
+  position: absolute;
+  left: -0.9rem;
+  top: 50%;
+  width: 0.9rem;
+  height: 2px;
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.toc-rail a:hover {
+  background: var(--hover-bg);
+  color: var(--fg);
+  text-decoration: none;
+}
+
+.toc-rail a.active {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+@media (min-width: 1100px) {
+  .toc-rail { display: block; }
+  .toc { display: none; }
+}
+
 .page-body img { max-width: 100%; height: auto; }
 
 .page-list li { margin: 0.25rem 0; }
@@ -258,6 +463,20 @@ pre code {
 }
 
 .code-copy-btn:hover { opacity: 1; }
+
+/* ---- warning box ---- */
+
+.warning {
+  border: 1px solid var(--border);
+  border-left: 3px solid #d29922;
+  border-radius: 6px;
+  background: var(--hover-bg);
+  padding: 0.9rem 1.1rem;
+  margin: 1rem 0;
+  font-size: 0.95rem;
+}
+
+.warning code { white-space: pre-wrap; }
 
 /* ---- standalone (404) ---- */
 

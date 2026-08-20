@@ -19,6 +19,7 @@ class SiteConfig:
     title: str
     site_url: str
     brand: str
+    homepage: str | None
     cache_dir: Path
     params: dict
 
@@ -52,6 +53,11 @@ class SiteConfig:
             title=str(data.get("title", root.name)),
             site_url=str(data.get("site-url", "")),
             brand=str(data.get("brand", root.name.upper().replace("_", " "))),
+            homepage=(
+                str(data["homepage"]).strip().lstrip("./")
+                if "homepage" in data
+                else None
+            ),
             cache_dir=cache_dir,
             params=dict(data.get("params", {})),
         )
