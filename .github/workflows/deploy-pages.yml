@@ -48,6 +48,9 @@ jobs:
         with:
           enable-cache: true
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Build site
         env:
           HUGO_DEPLOY: "true"

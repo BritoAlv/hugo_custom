@@ -1,0 +1,11 @@
+{
+  "name": "hugo-custom",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:js": "tsc -p src/hugo_custom/templates/static/ts --outDir src/hugo_custom/templates/static/js"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
+}

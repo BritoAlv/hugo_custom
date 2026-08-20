@@ -46,6 +46,8 @@ complete Hugo project (content, layouts, static assets, `hugo.toml`) in the
 
 - [uv](https://docs.astral.sh/uv/)
 - [Hugo](https://gohugo.io/installation/) (extended edition, 0.165+)
+- [Node.js](https://nodejs.org/) and [pnpm](https://pnpm.io/) (to compile the
+  TypeScript site scripts — see [Development](#development))
 - git
 
 ### Quick start
@@ -209,7 +211,10 @@ warning is shown on the index page and at build time.
 ### Navigation and theme
 
 These are built into the generated template (`templates/static/css` and
-`templates/static/js`), no configuration needed:
+`templates/static/ts`), no configuration needed. The site scripts are written
+in TypeScript and compiled to `static/js/` by `tsc` (latest TypeScript,
+fetched with `pnpm dlx` and cached in pnpm's store after the first run) as
+part of the stage step:
 
 - **Sidebar tree** — the site structure is shown as a collapsible tree with
   SVG arrows and rounded connector lines. Folders stay collapsed/expanded
@@ -320,7 +325,8 @@ This repository is its own test bed: it publishes itself to
 2. **Stage** — build `stage/` (`hugo_src/`): processed markdown and
    notebook pages in `content/`, `codeview/` pages, raw files in `static/`,
    generated `data/sidebar.yml` (the sidebar tree), `hugo.toml` and the
-   layout/asset templates.
+   layout/asset templates (the TypeScript site scripts are compiled to
+   `static/js/` with `tsc` here).
 3. **Render** — `hugo --source hugo_src --destination site`.
 4. **Vendor** — pinned KaTeX and Lato fonts and the file icons are copied
    into `static/vendor/` and `static/icons/` during staging, so the built
@@ -350,6 +356,22 @@ uv sync
 uv run hugo-custom --help
 uv run hugo-custom          # build this repo's own site from its files
 ```
+
+The site scripts in `src/hugo_custom/templates/static/ts/` are compiled at
+stage time. To get TypeScript IntelliSense and type-checking in your editor,
+install the pinned compiler once:
+
+```bash
+pnpm install
+pnpm run build:js          # optional: compile to templates/static/js/ by hand
+```
+
+VSCode uses the native TypeScript 7 language service when
+`"js/ts.experimental.useTsgo": true` is set (already done via
+`.vscode/settings.json`). When running `hugo-custom` from an installed copy
+(via `uvx`), the compiler is fetched on demand with `pnpm dlx`, which
+resolves the latest TypeScript release; the pnpm store caches it, so builds
+work offline after the first run.
 
 Test against any content repo without installing anything:
 

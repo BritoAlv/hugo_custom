@@ -367,17 +367,54 @@ class Builder:
         icons = ensure_file_icons(needed_icons, site.vendor)
         shutil.copytree(icons, stage / "static" / "icons", dirs_exist_ok=True)
         shutil.copytree(TEMPLATES / "layouts", stage / "layouts", dirs_exist_ok=True)
-        for rel in ("css", "js"):
-            dst = stage / "static" / rel
-            dst.mkdir(parents=True, exist_ok=True)
-            for f in (TEMPLATES / "static" / rel).glob("*"):
-                write_if_changed(dst / f.name, f.read_text(encoding="utf-8"))
+        dst = stage / "static" / "css"
+        dst.mkdir(parents=True, exist_ok=True)
+        for f in (TEMPLATES / "static" / "css").glob("*"):
+            write_if_changed(dst / f.name, f.read_text(encoding="utf-8"))
+        self.stage_js()
         write_if_changed(
             stage / "static" / "css" / "chroma.css",
             chroma_css("github", ':root:not([data-theme="dark"])')
             + "\n"
             + chroma_css("github-dark", ':root[data-theme="dark"]'),
         )
+
+    def tsc_cmd(self) -> list[str] | None:
+        local = PACKAGE_DIR.parents[1] / "node_modules" / ".bin" / "tsc"
+        if local.is_file():
+            return [str(local)]
+        if shutil.which("pnpm"):
+            return ["pnpm", "dlx", "--package=typescript", "tsc"]
+        if shutil.which("tsc"):
+            return ["tsc"]
+        return None
+
+    def stage_js(self) -> None:
+        site = self.site
+        out = site.stage / "static" / "js"
+        if out.is_dir():
+            shutil.rmtree(out)
+        out.mkdir(parents=True)
+        cmd = self.tsc_cmd()
+        if cmd is None:
+            sys.exit(
+                "error: TypeScript compiler not found; install Node.js and pnpm "
+                "(`pnpm dlx --package=typescript tsc`) or put tsc on PATH"
+            )
+        print(f"compiling TypeScript templates -> {out}")
+        proc = subprocess.run(
+            [
+                *cmd,
+                "--project",
+                str(TEMPLATES / "static" / "ts" / "tsconfig.json"),
+                "--outDir",
+                str(out),
+            ],
+            capture_output=True,
+            text=True,
+        )
+        if proc.returncode != 0:
+            sys.exit(proc.stdout + proc.stderr)
 
     def tree(self) -> dict:
         site = self.site

@@ -1,26 +1,6 @@
 <script src="{{ "vendor/katex/katex.min.js" | relURL }}"></script>
 <script src="{{ "vendor/katex/contrib/auto-render.min.js" | relURL }}"></script>
-<script>
-(function () {
-  function render() {
-    if (typeof renderMathInElement === "undefined") return;
-    renderMathInElement(document.body, {
-      delimiters: [
-        { left: "$$", right: "$$", display: true },
-        { left: "$", right: "$", display: false },
-        { left: "\\(", right: "\\)", display: false },
-        { left: "\\[", right: "\\]", display: true }
-      ],
-      throwOnError: false
-    });
-  }
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", render);
-  } else {
-    render();
-  }
-})();
-</script>
+<script src="{{ "js/katex-render.js" | relURL }}"></script>
 <script src="{{ "js/code-copy.js" | relURL }}"></script>
 <script src="{{ "js/search.js" | relURL }}"></script>
 <script src="{{ "js/sidebar-tree.js" | relURL }}"></script>

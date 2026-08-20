@@ -20,3 +20,4 @@ hugo-custom = "hugo_custom.build:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/hugo_custom"]
+exclude = ["src/hugo_custom/templates/static/js"]
