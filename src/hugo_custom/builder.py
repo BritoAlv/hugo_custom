@@ -26,7 +26,7 @@ from hugo_custom.assets import (
 )
 from hugo_custom.config import SiteConfig, deep_merge
 from hugo_custom.files import collect, load_specs, rel_of, url_rel
-from hugo_custom.git import git_date
+from hugo_custom.git import git_date, last_commit_info
 from hugo_custom.markdown import (
     csv_to_markdown,
     extract_tags,
@@ -219,10 +219,22 @@ class Builder:
         meta.setdefault("title", site.title)
         meta.pop("rel", None)
         body = rebase_links(body, str(Path(rel).parent))
+        self.apply_git_meta(src, meta)
         write_if_changed(
             site.stage / "content" / "_index.md", front_matter(meta) + body
         )
         return True
+
+    def apply_git_meta(self, src: Path, meta: dict) -> None:
+        """Fill `meta` with last-commit info (or the file's mtime when the
+        file has no git history) so pages can show it in the footer."""
+        info = last_commit_info(self.site, src)
+        if info:
+            meta["lastmod"] = info["date"][:10]
+            if info.get("hash"):
+                meta["lastcommit"] = info["hash"]
+                meta["lastcommit_author"] = info["author"]
+                meta["lastcommit_date"] = info["date"]
 
     def write_page(self, src: Path) -> None:
         site = self.site
@@ -232,13 +244,11 @@ class Builder:
         if meta is None:
             meta = {}
         created = git_date(site, src, first=True)
-        modified = git_date(site, src, first=False)
-        if created is None and modified is not None:
-            created = modified
+        self.apply_git_meta(src, meta)
+        if created is None and meta.get("lastmod"):
+            created = meta["lastmod"]
         if created:
             meta.setdefault("date", created)
-        if modified:
-            meta["lastmod"] = modified
         tags = meta.get("categories") or meta.get("keywords") or meta.get("tags") or []
         if isinstance(tags, str):
             tags = [tags]
@@ -273,13 +283,11 @@ class Builder:
         else:
             meta["title"] = humanize(src.stem)
         created = git_date(site, src, first=True)
-        modified = git_date(site, src, first=False)
-        if created is None and modified is not None:
-            created = modified
+        self.apply_git_meta(src, meta)
+        if created is None and meta.get("lastmod"):
+            created = meta["lastmod"]
         if created:
             meta["date"] = created
-        if modified:
-            meta["lastmod"] = modified
         tags = nb_meta.get("categories") or nb_meta.get("tags") or []
         if isinstance(tags, str):
             tags = [tags]
@@ -310,6 +318,7 @@ class Builder:
         page_dir = os.path.join(CODE_OUTPUT_DIR, str(Path(rel).parent), Path(rel).name)
         download = os.path.relpath(rel, page_dir)
         meta = {"title": src.name, "rel": rel, "lang": lang, "download": download}
+        self.apply_git_meta(src, meta)
         write_if_changed(
             site.stage / "content" / CODE_OUTPUT_DIR / f"{rel}.md",
             front_matter(meta),
@@ -332,6 +341,7 @@ class Builder:
             "kind": kind,
             "download": download,
         }
+        self.apply_git_meta(src, meta)
         body = ""
         if kind in ("csv", "text"):
             try:
