@@ -15,6 +15,13 @@ KATEX_TARBALL = f"https://registry.npmjs.org/katex/-/katex-{KATEX_VERSION}.tgz"
 
 ICON_BASE = "https://cdn.jsdelivr.net/gh/vscode-icons/vscode-icons@master/icons/"
 
+ICON_ALT_BASE = "https://raw.githubusercontent.com/PKief/vscode-material-icon-theme/main/icons/"
+
+# Icon names missing from the vscode-icons set, with a fallback source.
+ICON_ALT = {
+    "file_type_csv": ICON_ALT_BASE + "table.svg",
+}
+
 EXT_ICONS = {
     ".rs": "file_type_rust",
     ".py": "file_type_python",
@@ -44,7 +51,7 @@ EXT_ICONS = {
     ".md": "file_type_markdown",
     ".ipynb": "file_type_jupyter",
     ".svg": "file_type_svg",
-    ".csv": "file_type_excel",
+    ".csv": "file_type_csv",
     ".png": "file_type_image",
     ".jpg": "file_type_image",
     ".jpeg": "file_type_image",
@@ -224,8 +231,8 @@ def ensure_fonts(vendor: Path) -> Path:
 
 def ensure_file_icons(names: set[str], vendor: Path) -> Path:
     """Return the cache dir with per-extension SVGs, fetching missing ones from
-    the vscode-icons set (cached on disk; failed fetches fall back to the
-    generic file icon)."""
+    the vscode-icons set (with `ICON_ALT` fallbacks; cached on disk; failed
+    fetches fall back to the generic file icon)."""
     cache = vendor / "icons"
     cache.mkdir(parents=True, exist_ok=True)
     wanted = names | {DEFAULT_ICON}
@@ -234,11 +241,8 @@ def ensure_file_icons(names: set[str], vendor: Path) -> Path:
     if not missing:
         return cache
 
-    def fetch(name: str) -> str | None:
-        req = urllib.request.Request(
-            ICON_BASE + name + ".svg",
-            headers={"User-Agent": USER_AGENT},
-        )
+    def fetch(url: str) -> str | None:
+        req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
         try:
             with urllib.request.urlopen(req, timeout=120) as resp:
                 data = resp.read()
@@ -249,7 +253,9 @@ def ensure_file_icons(names: set[str], vendor: Path) -> Path:
         return data.decode("utf-8")
 
     for name in sorted(missing):
-        data = fetch(name)
+        data = fetch(ICON_BASE + name + ".svg")
+        if data is None and name in ICON_ALT:
+            data = fetch(ICON_ALT[name])
         if data is None:
             print(f"warning: could not fetch icon {name}, using {DEFAULT_ICON}.svg")
             if name == DEFAULT_ICON:
