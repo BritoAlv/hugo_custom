@@ -20,8 +20,20 @@ def extract_tags(text: str) -> list[str]:
     lines = text.split("\n")
     i = 0
     keyword_re = re.compile(r"^#{2,4}\s*[Kk]eywords\.?\s*:?\s*$")
+    fence_re = re.compile(r"^\s*(`{3,}|~{3,})")
+    in_fence = ""
     while i < len(lines):
-        if keyword_re.match(lines[i].strip()):
+        line = lines[i]
+        fence = fence_re.match(line)
+        if fence:
+            marker = fence.group(1)
+            if not in_fence:
+                in_fence = marker
+            elif line.strip().startswith(marker):
+                in_fence = ""
+            i += 1
+            continue
+        if not in_fence and keyword_re.match(line.strip()):
             j = i + 1
             while j < len(lines) and not lines[j].strip():
                 j += 1
@@ -44,18 +56,17 @@ def extract_tags(text: str) -> list[str]:
 def split_front_matter(text: str) -> tuple[dict | None, str]:
     if not text.startswith("---"):
         return None, text
-    lines = text.split("\n", 2)
-    if len(lines) < 3 or lines[1].strip() != "---":
+    match = re.match(r"^---[ \t]*\n(.*?)\n---[ \t]*(?:\n|$)", text, re.DOTALL)
+    if not match:
         return None, text
-    fm_text = lines[1]
+    fm_text = match.group(1)
     try:
         meta = yaml.safe_load(fm_text)
     except yaml.YAMLError:
         return None, text
     if not isinstance(meta, dict):
         return None, text
-    rest = text[len("---\n") + len(fm_text) + len("\n---\n") :]
-    return meta, rest
+    return meta, text[match.end() :]
 
 
 def front_matter(meta: dict) -> str:

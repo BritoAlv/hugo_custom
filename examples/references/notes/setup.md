@@ -26,3 +26,9 @@ uv run pytest
 ### Known issues
 
 See [Overview](overview.md) for an introduction.
+
+## Keywords
+
+- setup
+- hugo
+- uv

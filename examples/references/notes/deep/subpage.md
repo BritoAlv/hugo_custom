@@ -25,3 +25,8 @@ and when jumping to a sibling folder.
 From `/notes/deep/subpage/`, three levels up reach the site root:
 
 [../../../assets/diagram.svg](../../../assets/diagram.svg)
+
+## Keywords
+
+- nesting
+- links

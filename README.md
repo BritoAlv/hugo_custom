@@ -236,11 +236,10 @@ part of the stage step:
 
 The pipeline treats the folder tree under `source/` as the site structure:
 
-- **Markdown** (`.md`): rendered as pages. `## Keywords` (or `### Keywords:`)
-  sections are parsed into tags, which feed the tags pages, sidebar and
-  `.page-meta` block. Dates are taken from git history (`date` from the
-  first commit, `lastmod` from the last). Front matter is preserved and
-  enriched; the first H1 becomes the page title.
+- **Markdown** (`.md`): rendered as pages. Tags come from front matter or
+  `## Keywords` sections (see [Tags](#tags) below). Dates are taken from git
+  history (`date` from the first commit, `lastmod` from the last). Front
+  matter is preserved and enriched; the first H1 becomes the page title.
 - **Jupyter notebooks** (`.ipynb`): converted to static Markdown pages —
   markdown cells pass through, code cells become highlighted blocks and the
   stored outputs (text/images) are kept as-is. Notebooks are **not**
@@ -254,6 +253,50 @@ The pipeline treats the folder tree under `source/` as the site structure:
   audio, PDFs, CSV and text data) get a `preview/` page that embeds the file
   inline with a download link; markdown links and sidebar entries point at the
   preview page, and the raw file stays available for download.
+
+#### Tags
+
+Tags are **never generated automatically** — only dates and titles are
+derived from the content; tags are always yours to write. Pages with tags
+show them in a "Keywords:" block under the title, appear on the `/tags/`
+page (grouped by tag) and are searchable by tag. There are two authoring
+mechanisms:
+
+**1. `## Keywords` section (markdown only).** A heading at level 2–4 named
+`Keywords` (optionally with a trailing period or colon), followed by a bullet
+list — each bullet becomes a tag:
+
+```markdown
+## Keywords
+
+- hugo
+- static site
+- python
+```
+
+The heading may also be written as `### Keywords:`. Bullets keep their
+capitalization but are slugified for the tag URL (`static site` →
+`/tags/static-site/`).
+
+**2. Front matter.** Add a `tags` list to the YAML front matter of a page.
+`categories` and `keywords` are accepted as aliases:
+
+```markdown
+---
+title: My page
+tags: [hugo, static-site]
+---
+
+# My page
+```
+
+**Notebooks** only support front matter: put `tags` (or `categories`) in the
+notebook's `metadata` (e.g. `"metadata": {"tags": ["analysis"]}`). Notebook
+markdown cells are **not** scanned for `## Keywords`.
+
+Both mechanisms can be combined: front matter tags and `## Keywords` bullets
+are merged. See `examples/references/notes/` and
+`examples/references/notebooks/` for live examples of each.
 
 Exclusions:
 
