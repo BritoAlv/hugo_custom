@@ -439,6 +439,53 @@ pre code {
 
 .page-body img { max-width: 100%; height: auto; }
 
+/* ---- tables ---- */
+
+.page-body table {
+  border-collapse: collapse;
+  width: 100%;
+  display: block;
+  overflow-x: auto;
+  font-size: 0.95em;
+}
+
+.page-body th,
+.page-body td {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.page-body thead th {
+  background: var(--header-bg);
+  font-weight: 700;
+}
+
+.page-body tbody tr:nth-child(even) {
+  background: var(--hover-bg);
+}
+
+/* ---- mermaid diagrams ---- */
+
+.page-body pre.mermaid {
+  background: transparent;
+  border: none;
+  padding: 0.5rem 0;
+  text-align: center;
+  overflow-x: auto;
+}
+
+.page-body pre.mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.page-body pre.mermaid.mermaid-error {
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+
 .page-list li { margin: 0.25rem 0; }
 
 .codeview-path {

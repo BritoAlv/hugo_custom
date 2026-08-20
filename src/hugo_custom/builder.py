@@ -21,6 +21,7 @@ from hugo_custom.assets import (
     ensure_file_icons,
     ensure_fonts,
     ensure_katex,
+    ensure_mermaid,
     make_og,
 )
 from hugo_custom.config import SiteConfig, deep_merge
@@ -420,6 +421,11 @@ class Builder:
         shutil.copytree(
             katex, stage / "static" / "vendor" / "katex", dirs_exist_ok=True
         )
+        mermaid = ensure_mermaid(site.vendor)
+        if mermaid is not None:
+            shutil.copytree(
+                mermaid, stage / "static" / "vendor" / "mermaid", dirs_exist_ok=True
+            )
         fonts = ensure_fonts(site.vendor)
         shutil.copytree(
             fonts, stage / "static" / "vendor" / "fonts", dirs_exist_ok=True
