@@ -3,8 +3,10 @@ from __future__ import annotations
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from hugo_custom.config import SiteConfig
+if TYPE_CHECKING:
+    from hugo_custom.config import SiteConfig
 
 
 def git_date(site: SiteConfig, path: Path, first: bool) -> str | None:

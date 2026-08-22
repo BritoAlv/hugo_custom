@@ -6,7 +6,8 @@ import sys
 from pathlib import Path
 
 from hugo_custom.builder import Builder
-from hugo_custom.config import CONFIG_FILENAME, SiteConfig, find_config
+from hugo_custom.config import CONFIG_FILENAME, SiteConfig
+from hugo_custom.utils.config_utils import find_config
 
 DEPLOY_ENV = "HUGO_DEPLOY"
 

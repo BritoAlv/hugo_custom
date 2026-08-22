@@ -63,20 +63,4 @@ class SiteConfig:
         )
 
 
-def deep_merge(base: dict, overlay: dict) -> dict:
-    for key, value in overlay.items():
-        if isinstance(value, dict) and isinstance(base.get(key), dict):
-            deep_merge(base[key], value)
-        else:
-            base[key] = value
-    return base
 
-
-def find_config(start: Path) -> Path | None:
-    """Locate the site configuration at the top of the repo, walking up from
-    `start` (current directory) through its parents."""
-    for directory in (start, *start.parents):
-        candidate = directory / CONFIG_FILENAME
-        if candidate.is_file():
-            return candidate
-    return None

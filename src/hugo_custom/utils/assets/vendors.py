@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import io
 import os
 import re
@@ -10,152 +9,19 @@ import tarfile
 import urllib.request
 from pathlib import Path
 
-KATEX_VERSION = "0.18.4"
-KATEX_TARBALL = f"https://registry.npmjs.org/katex/-/katex-{KATEX_VERSION}.tgz"
-
-MERMAID_VERSION = "11.17.0"
-MERMAID_URLS = [
-    f"https://cdn.jsdelivr.net/npm/mermaid@{MERMAID_VERSION}/dist/mermaid.min.js",
-    f"https://unpkg.com/mermaid@{MERMAID_VERSION}/dist/mermaid.min.js",
-]
-
-ECHARTS_VERSION = "5.6.0"
-ECHARTS_URLS = [
-    f"https://cdn.jsdelivr.net/npm/echarts@{ECHARTS_VERSION}/dist/echarts.min.js",
-    f"https://unpkg.com/echarts@{ECHARTS_VERSION}/dist/echarts.min.js",
-]
-
-ICON_BASE = "https://cdn.jsdelivr.net/gh/vscode-icons/vscode-icons@master/icons/"
-
-ICON_ALT_BASE = "https://raw.githubusercontent.com/PKief/vscode-material-icon-theme/main/icons/"
-
-# Icon names missing from the vscode-icons set, with a fallback source.
-ICON_ALT = {
-    "file_type_csv": ICON_ALT_BASE + "table.svg",
-}
-
-EXT_ICONS = {
-    ".rs": "file_type_rust",
-    ".py": "file_type_python",
-    ".toml": "file_type_toml",
-    ".sh": "file_type_shell",
-    ".bash": "file_type_shell",
-    ".js": "file_type_js",
-    ".ts": "file_type_typescript",
-    ".jsx": "file_type_reactjs",
-    ".tsx": "file_type_reactts",
-    ".json": "file_type_json",
-    ".yml": "file_type_yaml",
-    ".yaml": "file_type_yaml",
-    ".c": "file_type_c",
-    ".h": "file_type_cheader",
-    ".cpp": "file_type_cpp",
-    ".hpp": "file_type_cppheader",
-    ".java": "file_type_java",
-    ".go": "file_type_go",
-    ".rb": "file_type_ruby",
-    ".txt": "file_type_text",
-    ".ini": "file_type_ini",
-    ".cfg": "file_type_ini",
-    ".sql": "file_type_sql",
-    ".html": "file_type_html",
-    ".css": "file_type_css",
-    ".md": "file_type_markdown",
-    ".ipynb": "file_type_jupyter",
-    ".svg": "file_type_svg",
-    ".csv": "file_type_csv",
-    ".png": "file_type_image",
-    ".jpg": "file_type_image",
-    ".jpeg": "file_type_image",
-    ".gif": "file_type_image",
-    ".webp": "file_type_image",
-    ".ico": "file_type_image",
-    ".bmp": "file_type_image",
-    ".mp4": "file_type_video",
-    ".webm": "file_type_video",
-    ".mov": "file_type_video",
-    ".mkv": "file_type_video",
-    ".avi": "file_type_video",
-    ".ogv": "file_type_video",
-    ".mp3": "file_type_audio",
-    ".wav": "file_type_audio",
-    ".ogg": "file_type_audio",
-    ".flac": "file_type_audio",
-    ".m4a": "file_type_audio",
-    ".pdf": "file_type_pdf2",
-    ".zip": "file_type_zip",
-    ".xml": "file_type_xml",
-}
-LOCK_ICONS = {"Cargo.lock": "file_type_cargo", "uv.lock": "file_type_uv"}
-DEFAULT_ICON = "default_file"
-
-GOOGLE_FONTS_URL = (
-    "https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400"
-    "&display=swap"
-)
-GOOGLE_FONTS_RE = re.compile(r'https://fonts\.googleapis\.com/css2\?[^"\'<>]+')
-GSTATIC_RE = re.compile(r"url\((https://fonts\.gstatic\.com/[^)]+)\)")
-
-CODE_EXTENSIONS = {
-    ".rs",
-    ".py",
-    ".toml",
-    ".sh",
-    ".bash",
-    ".js",
-    ".ts",
-    ".jsx",
-    ".tsx",
-    ".json",
-    ".yml",
-    ".yaml",
-    ".c",
-    ".h",
-    ".cpp",
-    ".hpp",
-    ".java",
-    ".go",
-    ".rb",
-    ".txt",
-    ".ini",
-    ".cfg",
-    ".sql",
-    ".html",
-    ".css",
-    ".lock",
-}
-
-LANGS = {
-    ".rs": "rust",
-    ".py": "python",
-    ".toml": "toml",
-    ".sh": "bash",
-    ".bash": "bash",
-    ".js": "javascript",
-    ".ts": "typescript",
-    ".jsx": "jsx",
-    ".tsx": "tsx",
-    ".json": "json",
-    ".yml": "yaml",
-    ".yaml": "yaml",
-    ".c": "c",
-    ".h": "c",
-    ".cpp": "cpp",
-    ".hpp": "cpp",
-    ".java": "java",
-    ".go": "go",
-    ".rb": "ruby",
-    ".txt": "text",
-    ".ini": "ini",
-    ".cfg": "ini",
-    ".sql": "sql",
-    ".html": "html",
-    ".css": "css",
-}
-
-USER_AGENT = (
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/126.0 Safari/537.36"
+from hugo_custom.utils.assets.constants import (
+    DEFAULT_ICON,
+    ECHARTS_URLS,
+    ECHARTS_VERSION,
+    GOOGLE_FONTS_URL,
+    GSTATIC_RE,
+    ICON_ALT,
+    ICON_BASE,
+    KATEX_TARBALL,
+    KATEX_VERSION,
+    MERMAID_URLS,
+    MERMAID_VERSION,
+    USER_AGENT,
 )
 
 
@@ -360,55 +226,3 @@ def ensure_file_icons(names: set[str], vendor: Path) -> Path:
         (cache / f"{name}.svg").write_text(data, encoding="utf-8")
     print(f"fetched {sorted(missing)} icons into {cache}")
     return cache
-
-
-def make_og(path: Path, label: str, brand: str) -> None:
-    from PIL import Image, ImageDraw, ImageFont
-
-    width, height = 1200, 630
-    digest = hashlib.sha256(str(path.stem).encode()).hexdigest()
-    bg = tuple(int(digest[i : i + 2], 16) for i in (0, 2, 4))
-    img = Image.new("RGB", (width, height), bg)
-    draw = ImageDraw.Draw(img)
-    font_paths = [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-    ]
-    title_font = None
-    small_font = None
-    for fp in font_paths:
-        if os.path.exists(fp):
-            title_font = ImageFont.truetype(fp, 96)
-            small_font = ImageFont.truetype(fp, 40)
-            break
-    if title_font is None:
-        title_font = ImageFont.load_default(size=64)
-        small_font = ImageFont.load_default(size=32)
-    words = label.split()
-    lines = []
-    current = ""
-    for word in words:
-        if (
-            current
-            and draw.textlength(current + " " + word, font=title_font) > width - 160
-        ):
-            lines.append(current)
-            current = word
-        else:
-            current = f"{current} {word}".strip()
-    if current:
-        lines.append(current)
-    y = height // 2 - 40 * max(1, len(lines) // 2)
-    primer = (255, 255, 255)
-    for line in lines[:4]:
-        text_width = draw.textlength(line, font=title_font)
-        draw.text(((width - text_width) / 2, y), line, font=title_font, fill=primer)
-        y += 110
-    brand_width = draw.textlength(brand, font=small_font)
-    draw.text(
-        ((width - brand_width) / 2, height - 90),
-        brand,
-        font=small_font,
-        fill=(230, 230, 230),
-    )
-    img.save(path, format="PNG")
