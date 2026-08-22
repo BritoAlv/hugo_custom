@@ -291,9 +291,10 @@ class Builder:
         site = self.site
         rel = rel_of(site, src)
         text = src.read_text(encoding="utf-8")
+        meta: dict | None
         meta, body = split_front_matter(text)
         if meta is None:
-            meta: dict = {}
+            meta = {}
         created = git_date(site, src, first=True)
         self.apply_git_meta(src, meta)
         if created is None and meta.get("lastmod"):
