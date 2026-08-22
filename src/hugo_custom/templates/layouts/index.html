@@ -12,7 +12,9 @@
   Check the <code>homepage</code> setting in <code>hugo_custom_site.toml</code>.
 </div>
 {{- else }}
+<div class="page-body">
 {{ .Content }}
+</div>
 {{ partial "page/page-footer.html" . }}
 {{- end }}
 {{ end }}
