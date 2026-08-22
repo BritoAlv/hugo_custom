@@ -6,19 +6,15 @@ Let's say you have a folder with your notes, *.md*, code, etc, and you would lik
 
 The idea is take a folder with content (.md, code files, video, etc) and turn it into a static web site, with the following features: 
   
-  - Each code file has its own page, so they are treated like .md files. 
+  - Each supported file (*.csv*, *.mp4*, *.md*, *.rust*, etc) has its own page, so they are treated like .md files. 
   - References between files work on the site.
-  - Videos can be played.
   - Inside the folder, gitignores are considered.
   - Offline after all the assets are downloaded.
-  - Avoid extra code for plugins, use Hugo ecosystem.
-  - Collapsible sidebar tree with auto-expanded active branch.
   - Right-side table of contents that highlights the section you're reading.
-  - Light/dark theme toggle that remembers your choice. 
   - Obsidian-style graph page showing how content references each other. 
   - Git metadata on pages (last commit hash, author and date) when the content is tracked by git. 
 
-To achieve this the idea is that a processor read the content folder passed to it, transform it into something ready as input for Hugo, and feed it to Hugo, Hugo output is the site.
+To achieve those features, the idea is that a processor read the content folder passed to it, transform it into something ready as input for Hugo, and feed it to Hugo, Hugo output is the site.
 
 ```mermaid
 flowchart LR
