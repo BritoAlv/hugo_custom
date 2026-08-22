@@ -31,7 +31,7 @@ At this moment, the code is AI generated, seems to work, but I have to review it
 ### What It Is?
 
 A generic Hugo pipeline that turns **a folder of Markdown, notebooks and code** into a fully self-contained static website: staged Hugo project,
-rendered site, vendored KaTeX, local fonts, per-extension file icons, tags
+rendered site, vendored KaTeX, Mermaid, ECharts, local fonts, per-extension file icons, tags
 page, per-project OG images, search and code views for every source file.
 
 The tooling is a Python package (`hugo-custom`) installed and run through
@@ -42,26 +42,25 @@ complete Hugo project (content, layouts, static assets, `hugo.toml`) in the
 
 ### Requirements
 
-- [uv](https://docs.astral.sh/uv/)
-- [Hugo](https://gohugo.io/installation/) (extended edition, 0.165+)
-- [Node.js](https://nodejs.org/) and [pnpm](https://pnpm.io/) (to compile the
-  TypeScript site scripts — see [Development](#development))
-- git
+- [uv](https://docs.astral.sh/uv/) (recommended; `pip`/`pipx` also work — `uv` is only required for the reusable GitHub workflow)
+- [Hugo](https://gohugo.io/installation/) 0.165+ (extended edition recommended; current templates use `hugo gen chromastyles` and no SCSS pipeline, so vanilla Hugo also builds)
+- [Node.js](https://nodejs.org/) + [pnpm](https://pnpm.io/) 11+ (optional but recommended to compile the TypeScript site scripts — see [Development](#development); `tsc` on `PATH` also works, and `pnpm dlx --package=typescript tsc` is used as fallback)
+- git (optional; without it dates fall back to filesystem `mtime` and commit metadata is omitted — the site still builds)
 
 ### Quick start
 
 #### 1. Add `hugo_custom_site.toml` to your repo root
 
 The tool locates this file automatically by walking up from the current
-directory, so it must sit at the top of the repo:
+directory, so it normally sits at the top of the repo (override with `--config`):
 
 ```toml
 title = "My Articles"
 site-url = "https://yourname.github.io/myarticles/"
-source = "self"           # folder with the content
-stage = "hugo_src"        # generated Hugo project (add to .gitignore)
-output = "site"           # rendered site (add to .gitignore)
-# brand = "MY ARTICLES"   # text on the OG images (default: TITLE uppercased)
+source = "."             # folder with the content (relative to repo root; "." = repo itself, default)
+stage = "hugo_src"       # generated Hugo project (add to .gitignore)
+output = "site"          # rendered site (add to .gitignore)
+# brand = "MY ARTICLES"  # text on the OG images (default: title uppercased)
 # siteignore = ".siteignore"  # optional, see "Deploy-only exclusions"
 ```
 
@@ -81,9 +80,14 @@ regenerated on every build:
 
 Use the actual `stage`/`output` values from `hugo_custom_site.toml` if you
 changed them. Keep `hugo_custom_site.toml` and `siteignore` committed —
-they are configuration. Since the pipeline uses this `.gitignore` to decide
-what gets published from `source/`, these entries double as build-noise
-exclusions.
+they are configuration.
+
+> When `source = "."` (the common dogfooding case), `stage`/`output` live
+> *inside* the source tree. The `/.hugo_src/` and `/site/` patterns above
+> are what prevent them from being re-collected as content via the repo's
+> `.gitignore` + `siteignore` specs. If you set `source` to a subdirectory
+> (e.g. `source = "content"`), make sure `stage`/`output` are outside that
+> subdirectory or add matching ignore entries for that base.
 
 #### 3. Preview locally
 
@@ -95,7 +99,11 @@ uvx --from /path/to/hugo_custom hugo-custom --preview
 ```
 
 This stages the site and starts Hugo's dev server with hot reload
-(Ctrl-C to stop). Open the printed URL.
+(Ctrl-C to stop). Open the printed URL. Other useful flags:
+
+- `--config hugo_custom_site.toml` / `-c` — point at a config outside the repo root
+- `--stage-only` — only build `stage/` without calling `hugo`
+- `--deploy` — apply `.siteignore` exclusions locally
 
 To test from a phone or another device on the same network, bind the
 server to your LAN and open the printed address:
@@ -106,8 +114,11 @@ hugo-custom --preview --host 0.0.0.0
 ```
 
 Passing your LAN IP directly works too (`--host 192.168.1.50`). The
-`--host` flag is forwarded to Hugo's `--bind`, and live-reload's baseURL
-follows the address. The default is `127.0.0.1` (localhost only).
+`--host` flag is forwarded to Hugo's `--bind` on fixed port `1313`; when
+`--host` is not `127.0.0.1`/`localhost` the server's `--baseURL` is set to
+`http://<host>:1313` so live-reload works. When `--host` is `0.0.0.0` the
+tool also prints `http://<lan-ip>:1313/` (via `utils/network.py`). The
+default is `127.0.0.1` (localhost only).
 
 #### 4. Build for production locally
 
@@ -118,7 +129,7 @@ uvx --from /path/to/hugo_custom hugo-custom --deploy
 # uvx --from git+https://github.com/BritoAlv/hugo_custom.git@main hugo-custom --deploy
 ```
 
-Deploy mode is stricter: it applies `.siteignore` exclusions.
+Deploy mode is stricter: it applies `.siteignore` exclusions (also triggered by `HUGO_DEPLOY=true` in CI).
 
 #### Offline use
 
@@ -126,8 +137,8 @@ Everything works without network after an initial warm-up run:
 
 - The `uvx --from /path/to/hugo_custom` build itself never touches the
   network (only `--from git+...` does).
-- Vendored assets (KaTeX, Lato fonts, file icons) are downloaded on first
-  build and cached in `~/.cache/hugo_custom` (see
+- Vendored assets (KaTeX, Mermaid, ECharts, Lato fonts, file icons) are downloaded on first
+  build and cached in `~/.cache/hugo_custom/vendor` (see
   [Caching](#caching)); later builds reuse the cache.
 - `uv` caches the package build too, so the second run is fully offline.
 
@@ -155,8 +166,16 @@ concurrency:
 jobs:
   deploy:
     uses: BritoAlv/hugo_custom/.github/workflows/deploy-pages.yml@main
-    # config: hugo_custom_site.toml   # only needed if renamed/moved
+    with:
+      # All inputs are optional:
+      # config: hugo_custom_site.toml  # path to config in caller repo
+      # output: site                   # must match `output` in toml
+      # hugo-version: 0.165.0
+      # package: git+https://github.com/BritoAlv/hugo_custom.git@main
 ```
+
+> Pin `package` to a tag/commit for reproducibility (e.g. `@v0.1.0`); `@main` floats.
+> The reusable workflow installs Hugo + uv + pnpm 11, runs `uvx --from <package> hugo-custom --config <config>` with `HUGO_DEPLOY=true`, and uploads `<output>/` to Pages.
 
 3. Push. The reusable workflow installs Hugo + uv, runs the deploy build via
    `uvx`, and uploads `site/` to Pages.
@@ -168,20 +187,20 @@ jobs:
 | Key | Default | Meaning |
 |---|---|---|
 | `title` | repo directory name | Site title (used in the navbar, `<title>`, index page) |
-| `site-url` | `""` | Canonical URL, required for OG images to be absolute |
-| `brand` | `title` uppercased | Text drawn on the generated OG images |
-| `source` | `self` | Folder with the content (relative to repo root; `.` = the repo itself) |
+| `site-url` | `""` | Canonical URL, required for OG images to be absolute (empty yields a relative `og/...` path) |
+| `brand` | `title` uppercased (`_` → space) | Text drawn on the generated OG images |
+| `source` | `"."` | Folder with the content (relative to repo root; `"."` = repo itself; `"self"` deprecated alias) |
 | `stage` | `hugo_src` | Generated Hugo project (add to `.gitignore`) |
 | `output` | `site` | Rendered site (add to `.gitignore`) |
-| `siteignore` | none | Path to a deploy-only ignore file (see below) |
-| `ignore` | `[]` | Always-applied exclusion patterns (gitignore syntax) |
-| `cache-dir` | `$XDG_CACHE_HOME/hugo_custom` | Where vendored assets are cached |
-| `homepage` | none | Source file rendered on the site's index page (see below) |
+| `siteignore` | none | Path to a deploy-only ignore file (relative to repo root, see below) |
+| `ignore` | `[]` | Always-applied exclusion patterns (gitignore syntax, relative to repo root) |
+| `cache-dir` | `$XDG_CACHE_HOME/hugo_custom` | Where vendored assets are cached (under `vendor/`) |
+| `homepage` | none | Source file rendered on the site's index page (must be a `.md` under `source/` and published) |
 | `[params]` | none | Extra keys merged into the Hugo `params` section |
 
 The built-in template (`src/hugo_custom/templates/hugo.toml`) provides the
 baseline: pretty URLs, tags taxonomy, search index (`/index.json`), KaTeX
-math via the goldmark passthrough extension, Chroma syntax highlighting and
+math via the goldmark passthrough extension, Mermaid diagram support, Chroma syntax highlighting and
 the light/dark CSS theme.
 
 Example overrides:
@@ -189,9 +208,13 @@ Example overrides:
 ```toml
 [params]
 description = "My site"
+# graph = false  # disable the /graph/ page and skip fetching ECharts
 ```
 
-`cache-dir` also honors the `HUGO_CUSTOM_CACHE` environment variable.
+`cache-dir` also honors the `HUGO_CUSTOM_CACHE` environment variable, which
+takes precedence over the toml key. A relative `cache-dir` is resolved
+against the repo root; an absolute path is used as-is. Vendored assets are
+cached under `cache-dir/vendor/`.
 
 ### Homepage
 
@@ -202,17 +225,15 @@ By default the index page shows a warning asking for a homepage file. Set
 homepage = "README.md"
 ```
 
-The file is rendered in its own page context (relative links, heading IDs
-and the right-side table of contents all work). If the file is missing, a
-warning is shown on the index page and at build time.
+The file must be a `.md` under `source/` and not ignored (otherwise a warning
+is emitted at build time and the index page shows the default warning). Relative links inside the homepage are rebased from its original folder (`utils/links.py:rebase_links`), and the page is rendered with its own heading IDs and right-side TOC. Images/shortcodes are not rebased.
 
 ### Navigation and theme
 
-These are built into the generated template (`templates/static/css` and
-`templates/static/ts`), no configuration needed. The site scripts are written
-in TypeScript and compiled to `static/js/` by `tsc` (latest TypeScript,
-fetched with `pnpm dlx` and cached in pnpm's store after the first run) as
-part of the stage step:
+These are built into the generated template (`src/hugo_custom/templates/static/css/src` and
+`src/hugo_custom/templates/static/ts`), no configuration needed. The site scripts are written
+in TypeScript and compiled to `stage/static/js/` by `tsc` as
+part of the stage step (`tsc --project src/hugo_custom/templates/static/ts/tsconfig.json --outDir stage/static/js`):
 
 - **Sidebar tree** — the site structure is shown as a collapsible tree with
   SVG arrows and rounded connector lines. Folders stay collapsed/expanded
@@ -228,33 +249,30 @@ part of the stage step:
   light and dark; your choice is remembered (`localStorage`, key
   `hugo-custom-theme`). Without a saved choice the OS preference is used.
   Code highlighting follows the theme via a scoped Chroma stylesheet
-  generated at build time.
+  generated at build time (`hugo gen chromastyles` for `github` + `github-dark`, scoped under `:root:not([data-theme="dark"])` / `:root[data-theme="dark"]`).
 
 ### Content conventions
 
-The pipeline treats the folder tree under `source/` as the site structure:
+The pipeline treats the folder tree under `source/` as the site structure.
+Hidden files/directories (leading `.`) are rendered without the dot via `utils/paths.py:url_rel` (e.g. `.hidden/file.md` → `/hidden/file.md/`), since Hugo ignores dot-prefixed paths.
 
 - **Markdown** (`.md`): rendered as pages. Tags come from front matter or
   `## Keywords` sections (see [Tags](#tags) below). Dates are taken from git
-  history (`date` from the first commit, `lastmod` from the last). Front
-  matter is preserved and enriched; the first H1 becomes the page title.
-  When a file is tracked by git, the page footer shows the **last commit**
-  (short hash, author and date); untracked files fall back to the
-  filesystem modification time. Pages without any git history get no
-  metadata.
+  history (`date` from the first commit with `--diff-filter=A`, `lastmod` from the last); if no git history, `date` falls back to `lastmod`. Front
+  matter is preserved and enriched; the first heading of any level (1–6) becomes the page title (Quarto-style) and is removed from the body. The page footer shows the **last commit** (short hash, author and date) when tracked by git; otherwise it falls back to the filesystem modification time — every existing file gets at least `lastmod`.
 - **Jupyter notebooks** (`.ipynb`): converted to static Markdown pages —
-  markdown cells pass through, code cells become highlighted blocks and the
+  markdown cells pass through, code cells become highlighted blocks (language from `kernelspec.language`) and the
   stored outputs (text/images) are kept as-is. Notebooks are **not**
-  executed.
+  executed. Title comes from `metadata.title` or the filename; tags only from `metadata.tags` / `metadata.categories` (no `keywords` alias, no `## Keywords` scanning).
 - **Code files** (`.rs`, `.py`, `.toml`, `.sh`, `.js`, …): a `codeview/`
   page is generated for each, showing the file with syntax highlighting and a
   download link; markdown links to code files are rewritten to point at their
-  codeview page.
+  codeview page. Binary files that fail UTF-8 decoding are silently skipped (no `codeview` page).
 - **Other files** (images, videos, audio, PDFs, data…): copied verbatim and
-  served as-is. Those with a browser-embeddable preview (images, videos,
-  audio, PDFs, CSV and text data) get a `preview/` page that embeds the file
+  served as-is. Those with a browser-embeddable preview (images `png/jpg/jpeg/gif/webp/ico/bmp/svg`, videos `mp4/webm/mov/mkv/avi/ogv`, audio `mp3/wav/ogg/flac/m4a`, PDFs, `csv`, and `xml/txt/ini/cfg` as text) get a `preview/` page that embeds the file
   inline with a download link; markdown links and sidebar entries point at the
   preview page, and the raw file stays available for download.
+- **Mermaid diagrams**: fenced code blocks with ` ```mermaid ` are rendered client-side via the vendored Mermaid bundle (`layouts/_default/_markup/render-codeblock-mermaid.html`, `static/js/mermaid-init.js`).
 
 #### Tags
 
@@ -266,7 +284,7 @@ mechanisms:
 
 **1. `## Keywords` section (markdown only).** A heading at level 2–4 named
 `Keywords` (optionally with a trailing period or colon), followed by a bullet
-list — each bullet becomes a tag:
+list — each bullet becomes a tag. Fenced code blocks are ignored while scanning.
 
 ```markdown
 ## Keywords
@@ -281,7 +299,8 @@ capitalization but are slugified for the tag URL (`static site` →
 `/tags/static-site/`).
 
 **2. Front matter.** Add a `tags` list to the YAML front matter of a page.
-`categories` and `keywords` are accepted as aliases:
+`categories` and `keywords` are accepted as aliases, but only the first
+non-empty among them is used (priority: `categories` > `keywords` > `tags`):
 
 ```markdown
 ---
@@ -302,21 +321,21 @@ are merged. See `examples/references/notes/` and
 
 Exclusions:
 
-- Files ignored by your repo's `.gitignore` (root and nested) are never
-  published.
+- Files ignored by your repo's `.gitignore` (root and nested under `source/`) are never
+  published. `.gitignore` and `.siteignore` files themselves are never published, and `.git/` directories are pruned.
 - The `ignore` key in `hugo_custom_site.toml` adds always-applied patterns
-  (gitignore syntax, relative to the repo root), e.g.
+  (gitignore syntax, relative to the repo root, base `""`), e.g.
   `ignore = [".github/", "docs/secret/"]`.
 - A `siteignore` file lists paths excluded **only on deploy** — useful for
   marking content "not ready yet" while keeping it in the repo and in local
-  previews:
+  previews. Paths are gitignore syntax relative to the repo root (leading `/` anchors to root, e.g. `/examples/wip/`):
 
   ```
-  source/wip_project/
-  source/rough_draft.md
+  examples/wip/
+  examples/rough_draft.md
   ```
 
-  (Use paths relative to the repo root, e.g. `self/async_rust/`.)
+  (Prefer repo-root-relative paths, e.g. `examples/wip/` when `source="."`.)
 
 ### References between files
 
@@ -337,18 +356,17 @@ every markdown link at build time. Write a normal markdown link with the
 Rules:
 
 - `.md` and `.ipynb` links are rewritten to the target page's permalink
-  (`#fragments` and `?queries` are preserved).
+  (`#fragments` and `?queries` are preserved). Hidden-file segments lose their leading dot (`/.hidden/file.md` → `/hidden/file.md/`).
 - Code files (`.rs`, `.py`, `.toml`, `.sh`, `.bash`, `.js`, `.ts`, `.jsx`,
   `.tsx`, `.json`, `.yml`, `.yaml`, `.c`, `.h`, `.cpp`, `.hpp`, `.java`,
   `.go`, `.rb`, `.txt`, `.ini`, `.cfg`, `.sql`, `.html`, `.css`, `.lock`)
   are rewritten to their `codeview/` page.
 - Other files (images, videos, audio, PDFs, CSV/text data…) are copied
-  verbatim and served as-is. Those with a browser-embeddable preview get a
+  verbatim and served as-is. Those with a browser-embeddable preview (`svg`, image, video, audio, `pdf`, `csv`, `xml/txt/ini/cfg` as text) get a
   `preview/` page that embeds the file inline with a download link, and their
-  links are rewritten to it (see the examples). Anything else (archives, …)
-  is linked directly to the raw file.
+  links are rewritten to it. Anything else (archives, …) is linked directly to the raw file.
 - `http(s)://`, `mailto:`, `#anchor` and `/absolute` links pass through
-  unchanged; external links get `rel="noopener"`.
+  unchanged; external `http(s)` links get `rel="noopener"`. `data:` URIs pass through unchanged in the staging scanner but are looked up as internal pages by the render hook (no effect in practice).
 
 `examples/references/` in this repo is a working demo of every case above.
 
@@ -356,21 +374,20 @@ Rules:
 
 Every build emits a `Graph` page (`/graph/`) reachable from the sidebar: an
 interactive force-directed map of the whole site, Obsidian-style. Each
-published file is a node (color-coded by kind: page, notebook, code, asset)
-and content A is connected to content B when A references B. The graph is
+published file is a node (color-coded by kind: page, notebook, code, asset;
+the homepage `/` is also a node when `homepage` is set) and content A is connected to content B when A references B. Self-links are ignored. The graph is
 built at stage time by scanning markdown and notebook bodies for relative
-links and resolving them with the same rules as the render hook above.
+links (fenced code blocks excluded) and resolving them with the same rules as the render hook above.
 
 The page lets you drag nodes, scroll to zoom, pan, reset the view, and filter
 node kinds (pages / notebooks / code / assets). Hovering a node highlights its
 neighbors; clicking opens the node's page.
 Broken internal references (links to files not published in this build) are
-reported as warnings during staging.
+reported as warnings during staging when the target extension is known (`.md`, `.ipynb`, code/preview kinds).
 
-Visualization uses the ECharts graph series (force layout), vendored and cached
-like the other assets (first build fetches it, later builds are offline). Set
-`graph = false` under `[params]` in `hugo_custom_site.toml` to disable the
-page:
+Visualization uses the ECharts graph series (force layout, `5.6.0`), vendored and cached
+like the other assets (first build fetches it, later builds are offline). Mermaid (`11.17.0`) is vendored similarly for diagram rendering. Set `graph = false` under `[params]` in `hugo_custom_site.toml` to disable the
+page (and skip fetching ECharts):
 
 ```toml
 [params]
@@ -399,30 +416,26 @@ This repository is its own test bed: it publishes itself to
 
 ### What the pipeline does
 
-1. **Collect** — walk `source/`, apply ignore specs (`.gitignore` +
-   nested + `siteignore` on deploy).
+1. **Collect** — walk `source/`, apply ignore specs (root `.gitignore` +
+    nested `.gitignore` under `source/` + `siteignore` on deploy + `ignore` list). `.gitignore`/`.siteignore` files and `.git/` dirs are never collected.
 2. **Stage** — build `stage/` (`hugo_src/`): processed markdown and
-   notebook pages in `content/`, `codeview/` pages, raw files in `static/`,
-   generated `data/sidebar.yml` (the sidebar tree), `hugo.toml` and the
-   layout/asset templates (the TypeScript site scripts are compiled to
-   `static/js/` with `tsc` here).
+    notebook pages in `content/`, `codeview/`/`preview/` pages, raw files in `static/`,
+    generated `data/sidebar.yml` (the sidebar tree), `hugo.toml`, `static/js/graph-data.json`, `content/graph.md`, `content/_index.md` (when `homepage` set), and the
+    layout/asset templates. During staging, vendored assets are copied into `static/vendor/` (KaTeX, Mermaid, ECharts when enabled, Lato fonts) and `static/icons/`, `static/css/main.css` (concatenated from `src/hugo_custom/templates/static/css/src/` in `CSS_MODULES` order) + `static/css/chroma.css` are generated, `static/og/*.png` per top-level project is created, and the TypeScript site scripts are compiled to `static/js/` with `tsc`. Stale `content/` and `static/` (non-protected `og/icons/vendor/css/js`) files are pruned.
 3. **Render** — `hugo --source hugo_src --destination site`.
-4. **Vendor** — pinned KaTeX and Lato fonts and the file icons are copied
-   into `static/vendor/` and `static/icons/` during staging, so the built
-   site is fully self-contained (no CDN references).
+4. Vendored assets (KaTeX tarball, Google Fonts woff2, vscode-icons SVGs, Mermaid/ECharts bundles) are prepared during staging from the cache (`cache-dir/vendor/`), so the built site is fully self-contained (no CDN references).
 
-Vendored assets (KaTeX tarball, Google Fonts woff2, vscode-icons SVGs) are
-downloaded on first use and cached, so builds are fast and work offline after
+Vendored assets are downloaded on first use and cached, so builds are fast and work offline after
 the first run.
 
 ### Caching
 
-Vendored assets live in `$XDG_CACHE_HOME/hugo_custom` (default
-`~/.cache/hugo_custom`), overridable per site with `cache-dir` in
+Vendored assets live in `$XDG_CACHE_HOME/hugo_custom/vendor` (default
+`~/.cache/hugo_custom/vendor`), overridable per site with `cache-dir` in
 `hugo_custom_site.toml` or globally with the `HUGO_CUSTOM_CACHE`
-environment variable.
+environment variable (env takes precedence; a relative `cache-dir` is resolved against the repo root).
 To share a warm cache across machines (CI, new laptop), copy that directory
-or point both at a shared location.
+or point both at a shared location. KaTeX is re-fetched if fewer than 10 `woff2` fonts are cached.
 
 ### Development
 
@@ -434,22 +447,26 @@ version bump or `uv cache clean`):
 uv sync
 uv run hugo-custom --help
 uv run hugo-custom          # build this repo's own site from its files
+uv run hugo-custom --stage-only  # only stage, don't render
+uv run hugo-custom --config /path/to/hugo_custom_site.toml --preview
 ```
 
 The site scripts in `src/hugo_custom/templates/static/ts/` are compiled at
-stage time. To get TypeScript IntelliSense and type-checking in your editor,
+stage time. Resolution order for `tsc` is: local `node_modules/.bin/tsc` → `pnpm dlx --package=typescript tsc` (latest, cached in pnpm store) → `tsc` on `PATH`. To get TypeScript IntelliSense and type-checking in your editor,
 install the pinned compiler once:
 
 ```bash
 pnpm install
-pnpm run build:js          # optional: compile to templates/static/js/ by hand
+pnpm run build:js          # optional: compile to src/hugo_custom/templates/static/js/ by hand (source dir, gitignored)
 ```
 
+> Stage builds compile to `stage/static/js/`; `pnpm run build:js` compiles to `src/hugo_custom/templates/static/js/` (committed template, gitignored) for editor checks. They are separate outputs.
+
 Site styles live as small per-component modules under
-`src/hugo_custom/templates/static/css/src/` (tokens, base, header, sidebar,
+`src/hugo_custom/templates/static/css/src/` (tokens, base, header, search, layout, sidebar,
 nav-drawer, toc, content, graph…). They are concatenated in a fixed order
 into a single `static/css/main.css` during staging (see `CSS_MODULES` in
-`builder.py`), so the built site still ships one stylesheet. Within each
+`src/hugo_custom/builder/constants.py`), so the built site still ships one stylesheet. Within each
 module keep base rules first and media queries last — later modules may
 override earlier ones.
 

@@ -43,16 +43,32 @@ class SiteConfig:
             cache_dir = base / "hugo_custom"
         siteignore = data.get("siteignore")
         ignore = tuple(str(p) for p in data.get("ignore", []))
+        title = str(data.get("title", root.name))
+        brand_raw = data.get("brand")
+        if brand_raw is None:
+            brand = title.upper().replace("_", " ")
+        else:
+            brand = str(brand_raw)
+        source_raw = data.get("source", ".")
+        if source_raw == "self":
+            import sys
+
+            print(
+                "warning: source = \"self\" is deprecated, use source = \".\" "
+                "(repo root) instead",
+                file=sys.stderr,
+            )
+            source_raw = "."
         return cls(
             root=root,
-            source=root / data.get("source", "self"),
+            source=root / source_raw,
             stage=root / data.get("stage", "hugo_src"),
             output=root / data.get("output", "site"),
             siteignore=(root / siteignore) if siteignore else None,
             ignore=ignore,
-            title=str(data.get("title", root.name)),
+            title=title,
             site_url=str(data.get("site-url", "")),
-            brand=str(data.get("brand", root.name.upper().replace("_", " "))),
+            brand=brand,
             homepage=(
                 str(data["homepage"]).strip().lstrip("./")
                 if "homepage" in data
