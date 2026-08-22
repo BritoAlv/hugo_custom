@@ -1,7 +1,8 @@
+{{- /* Regular content page: meta, body, footer. */ -}}
 {{ define "main" }}
 <article class="page">
   <h1 class="page-title">{{ .Title }}</h1>
-  {{ partial "page-meta.html" . }}
+  {{ partial "page/page-meta.html" . }}
   {{- $params := .Params }}
   {{- with $params.rel }}
     {{- if $params.kind }}
@@ -38,6 +39,6 @@
       {{ .Content }}
     </div>
   {{- end }}
-  {{ partial "page-footer.html" . }}
+  {{ partial "page/page-footer.html" . }}
 </article>
 {{ end }}

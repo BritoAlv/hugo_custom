@@ -5,12 +5,7 @@
   {{- end }}
   {{- with .Params.lastcommit }}
   <p class="page-footer-line">
-    <svg class="git-icon" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M6 3v12a4 4 0 0 0 4 4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-      <circle cx="6" cy="5" r="3" fill="none" stroke="currentColor" stroke-width="2"/>
-      <circle cx="18" cy="19" r="3" fill="none" stroke="currentColor" stroke-width="2"/>
-      <path d="M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" fill="none" stroke="currentColor" stroke-width="2"/>
-    </svg>
+    {{- partial "icon.html" (dict "name" "git" "class" "git-icon") }}
     <strong>Last commit:</strong> <code>{{ . }}</code> by {{ $.Params.lastcommit_author }} on {{ dateFormat "2006-01-02 15:04" $.Params.lastcommit_date }}
   </p>
   {{- end }}

@@ -1,0 +1,122 @@
+/* ---- Desktop sidebar: sticky column, collapsible tree sections,
+connector lines, file entries ---- */
+
+.sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  padding: 1.25rem 1rem;
+  border-right: 1px solid var(--border);
+  position: sticky;
+  top: 52px;
+  height: calc(100vh - 52px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+
+.sidebar-menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar-section-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  width: 100%;
+  margin: 1rem 0 0.25rem;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+.sidebar-arrow {
+  width: 0.72rem;
+  height: 0.72rem;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.sidebar-section-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.sidebar-section.collapsed > .sidebar-menu {
+  display: none;
+}
+
+.sidebar-section.collapsed > .sidebar-section-toggle .sidebar-arrow {
+  transform: rotate(-90deg);
+}
+
+.sidebar-menu .sidebar-menu .sidebar-section-toggle {
+  margin-top: 0.5rem;
+}
+
+.sidebar-menu .sidebar-menu {
+  position: relative;
+  margin-left: 0.5rem;
+  padding-left: 0.9rem;
+}
+
+.sidebar-menu .sidebar-menu::before {
+  content: "";
+  position: absolute;
+  left: 0.15rem;
+  top: 0.4rem;
+  bottom: 0.4rem;
+  width: 2px;
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.sidebar-menu .sidebar-menu > li > a,
+.sidebar-menu .sidebar-menu > li > .sidebar-section-toggle {
+  position: relative;
+}
+
+.sidebar-menu .sidebar-menu > li > a::before,
+.sidebar-menu .sidebar-menu > li > .sidebar-section-toggle::before {
+  content: "";
+  position: absolute;
+  left: -0.9rem;
+  top: 50%;
+  width: 0.9rem;
+  height: 2px;
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.sidebar-item a {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 5px;
+  color: var(--fg);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.sidebar-item a:hover { background: var(--hover-bg); text-decoration: none; }
+
+.sidebar-item a.active { background: var(--hover-bg); font-weight: 700; }
+
+.sidebar-file-icon {
+  width: 1.1em;
+  height: 1.1em;
+  flex-shrink: 0;
+  vertical-align: -0.15em;
+}

@@ -1,14 +1,12 @@
 {{- if .entry.section }}
 <li class="sidebar-section">
   <button class="sidebar-section-toggle" type="button" aria-expanded="true">
-    <svg class="sidebar-arrow" viewBox="0 0 10 10" aria-hidden="true">
-      <path d="M2.5 3.5 L5 6.5 L7.5 3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
+    {{- partial "icon.html" (dict "name" "chevron" "class" "sidebar-arrow") }}
     <span class="sidebar-section-label">{{ .entry.section }}</span>
   </button>
   <ul class="sidebar-menu">
     {{- range .entry.contents }}
-      {{- partial "sidebar-item.html" (dict "entry" . "current" $.current) }}
+      {{- partial "nav/sidebar-item.html" (dict "entry" . "current" $.current) }}
     {{- end }}
   </ul>
 </li>

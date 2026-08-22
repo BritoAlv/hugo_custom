@@ -1,3 +1,4 @@
+{{- /* Search index consumed by search.ts (client-side). */ -}}
 [{{- range $i, $p := (where site.Pages "Kind" "page") }}
 {{- if $i }},{{ end }}
 {"title": {{ $p.Title | jsonify }}, "url": {{ $p.RelPermalink | jsonify }}, "summary": {{ ($p.Summary | plainify) | jsonify }}, "tags": {{ ($p.Params.tags | default slice) | jsonify }}}

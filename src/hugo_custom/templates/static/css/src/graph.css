@@ -1,0 +1,106 @@
+/* ---- Reference graph page: controls, filters, canvas container ---- */
+
+.graph-hint {
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin-top: 0;
+}
+
+.graph-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.graph-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.graph-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.graph-dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.graph-dot-md { background: var(--graph-md); }
+
+.graph-dot-nb { background: var(--graph-nb); }
+
+.graph-dot-code { background: var(--graph-code); }
+
+.graph-dot-file { background: var(--graph-file); }
+
+.graph-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.graph-actions button {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.25rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.graph-actions button:hover { background: var(--hover-bg); }
+
+.graph-counts {
+  color: var(--muted);
+  margin-left: auto;
+}
+
+.graph-container {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 24rem);
+  min-height: 420px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--code-bg);
+  overflow: hidden;
+}
+
+.graph-message {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+@media (max-width: 480px) {
+  .graph-container {
+    height: 60vh;
+  }
+
+  .graph-controls {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+
+  .graph-counts {
+    margin-left: 0;
+  }
+}

@@ -1,3 +1,4 @@
+{{- /* Homepage: configured `homepage` file or a warning box. */ -}}
 {{ define "main" }}
 {{- $home := site.Params.homepage | default "" }}
 {{- if not $home }}
@@ -12,6 +13,6 @@
 </div>
 {{- else }}
 {{ .Content }}
-{{ partial "page-footer.html" . }}
+{{ partial "page/page-footer.html" . }}
 {{- end }}
 {{ end }}

@@ -445,6 +445,14 @@ pnpm install
 pnpm run build:js          # optional: compile to templates/static/js/ by hand
 ```
 
+Site styles live as small per-component modules under
+`src/hugo_custom/templates/static/css/src/` (tokens, base, header, sidebar,
+nav-drawer, toc, content, graph…). They are concatenated in a fixed order
+into a single `static/css/main.css` during staging (see `CSS_MODULES` in
+`builder.py`), so the built site still ships one stylesheet. Within each
+module keep base rules first and media queries last — later modules may
+override earlier ones.
+
 VSCode uses the native TypeScript 7 language service when
 `"js/ts.experimental.useTsgo": true` is set (already done via
 `.vscode/settings.json`). When running `hugo-custom` from an installed copy

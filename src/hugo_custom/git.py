@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import subprocess
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from hugo_custom.config import SiteConfig
@@ -51,7 +51,7 @@ def last_commit_info(site: SiteConfig, path: Path) -> dict | None:
     if info:
         return info
     try:
-        mtime = datetime.fromtimestamp(path.stat().st_mtime)
+        mtime = datetime.fromtimestamp(path.stat().st_mtime, tz=UTC)
     except OSError:
         return None
     return {"date": mtime.astimezone().isoformat()}

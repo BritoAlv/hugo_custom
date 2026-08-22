@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tomllib
 from pathlib import Path
+from typing import ClassVar
 
 import tomli_w
 import yaml
@@ -292,7 +293,7 @@ class Builder:
         text = src.read_text(encoding="utf-8")
         meta, body = split_front_matter(text)
         if meta is None:
-            meta = {}
+            meta: dict = {}
         created = git_date(site, src, first=True)
         self.apply_git_meta(src, meta)
         if created is None and meta.get("lastmod"):
@@ -611,8 +612,7 @@ class Builder:
         shutil.copytree(TEMPLATES / "layouts", stage / "layouts", dirs_exist_ok=True)
         dst = stage / "static" / "css"
         dst.mkdir(parents=True, exist_ok=True)
-        for f in (TEMPLATES / "static" / "css").glob("*"):
-            write_if_changed(dst / f.name, f.read_text(encoding="utf-8"))
+        write_if_changed(dst / "main.css", self.css_bundle())
         self.stage_js()
         write_if_changed(
             stage / "static" / "css" / "chroma.css",
@@ -620,6 +620,30 @@ class Builder:
             + "\n"
             + chroma_css("github-dark", ':root[data-theme="dark"]'),
         )
+
+    # Concatenation order matters: tokens first, component bases next, and
+    # each module's media queries after its own base rules (later modules
+    # may also override earlier ones, e.g. toc over layout).
+    CSS_MODULES: ClassVar[list[str]] = [
+        "tokens",
+        "base",
+        "header",
+        "search",
+        "layout",
+        "sidebar",
+        "nav-drawer",
+        "toc",
+        "content",
+        "graph",
+    ]
+
+    def css_bundle(self) -> str:
+        src = TEMPLATES / "static" / "css" / "src"
+        parts = []
+        for name in self.CSS_MODULES:
+            text = (src / f"{name}.css").read_text(encoding="utf-8").rstrip() + "\n"
+            parts.append(text)
+        return "\n".join(parts)
 
     def tsc_cmd(self) -> list[str] | None:
         local = PACKAGE_DIR.parents[1] / "node_modules" / ".bin" / "tsc"
@@ -654,6 +678,7 @@ class Builder:
             ],
             capture_output=True,
             text=True,
+            check=False,
         )
         if proc.returncode != 0:
             sys.exit(proc.stdout + proc.stderr)

@@ -1,0 +1,91 @@
+/* ---- Rendered content: tables, mermaid diagrams, asset previews,
+code blocks with copy button ---- */
+
+.page-body img { max-width: 100%; height: auto; }
+
+.page-body table {
+  border-collapse: collapse;
+  width: 100%;
+  display: block;
+  overflow-x: auto;
+  font-size: 0.95em;
+}
+
+.page-body th,
+.page-body td {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.page-body thead th {
+  background: var(--header-bg);
+  font-weight: 700;
+}
+
+.page-body tbody tr:nth-child(even) {
+  background: var(--hover-bg);
+}
+
+.page-body pre.mermaid {
+  background: transparent;
+  border: none;
+  padding: 0.5rem 0;
+  text-align: center;
+  overflow-x: auto;
+}
+
+.page-body pre.mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.page-body pre.mermaid.mermaid-error {
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+
+.file-preview {
+  max-width: 100%;
+  margin-top: 1rem;
+}
+
+.file-preview img,
+.file-preview video,
+.file-preview audio {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+
+.file-preview iframe {
+  width: 100%;
+  height: 70vh;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.code-wrap {
+  position: relative;
+  margin: 1em 0;
+}
+
+.code-wrap > pre { margin: 0; }
+
+.code-copy-btn {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  z-index: 1;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.code-copy-btn:hover { opacity: 1; }

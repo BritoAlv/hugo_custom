@@ -1,0 +1,89 @@
+/* ---- Page scaffolding: layout grid, content column, breadcrumbs,
+page title/meta/footer, warning box, standalone (404), page list, codeview path ---- */
+
+.layout {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-start;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  padding: 1.5rem 2.5rem 3rem;
+  max-width: 920px;
+}
+
+.breadcrumbs {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+
+.breadcrumbs .sep { margin: 0 0.4em; }
+
+.page-title { margin-top: 0; margin-bottom: 0.5rem; }
+
+.page-meta {
+  font-size: 0.9rem;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.5rem;
+}
+
+.page-meta p { margin: 0.25rem 0; }
+
+.page-footer {
+  font-size: 0.9rem;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  margin-top: 2rem;
+  padding-top: 0.5rem;
+}
+
+.page-footer-line {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  margin: 0.25rem 0;
+}
+
+.git-icon {
+  width: 1.1em;
+  height: 1.1em;
+  flex-shrink: 0;
+}
+
+.page-list li { margin: 0.25rem 0; }
+
+.codeview-path {
+  font-size: 0.95rem;
+  margin-top: 0;
+}
+
+.warning {
+  border: 1px solid var(--border);
+  border-left: 3px solid #d29922;
+  border-radius: 6px;
+  background: var(--hover-bg);
+  padding: 0.9rem 1.1rem;
+  margin: 1rem 0;
+  font-size: 0.95rem;
+}
+
+.warning code { white-space: pre-wrap; }
+
+.standalone {
+  margin: 0 auto;
+  padding-top: 3rem;
+}
+
+@media (max-width: 480px) {
+  .breadcrumbs {
+    font-size: 0.8rem;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}
