@@ -22,9 +22,9 @@ and when jumping to a sibling folder.
 
 ## Link to a static asset
 
-From `/notes/deep/subpage/`, three levels up reach the site root:
+From `/notes/deep/subpage/`, two levels up reach the reference assets:
 
-[../../../assets/diagram.svg](../../../assets/diagram.svg)
+[../../assets/diagram.svg](../../assets/diagram.svg)
 
 ## Keywords
 
