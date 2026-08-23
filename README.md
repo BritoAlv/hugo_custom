@@ -438,7 +438,7 @@ The codebase is split into three layers: a thin **framework** that drives the bu
 flowchart TB
     Cfg[SiteConfig<br>hugo_custom_site.toml] --> Builder
     Builder -->|collect + ignore specs| Published[published files]
-    Published -->|for each file: first handles()| Plugins
+    Published -->|"for each file: first handles()"| Plugins
     subgraph Plugins[Default plugin registry]
         direction TB
         P1[Notebook / Page<br>handles .md/.ipynb]

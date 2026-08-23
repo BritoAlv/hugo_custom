@@ -18,7 +18,12 @@
         render: (id: string, source: string) => Promise<{ svg: string }>;
       };
     }).mermaid;
-    m.initialize({ startOnLoad: false, theme: isDark() ? "dark" : "default" });
+    m.initialize({
+      startOnLoad: false,
+      theme: isDark() ? "dark" : "default",
+      securityLevel: "loose",
+      flowchart: { htmlLabels: true },
+    });
     const pending = Array.from(document.querySelectorAll<HTMLElement>("pre.mermaid"));
     for (const el of pending) {
       if (!el.dataset.mermaidSource) {
@@ -37,7 +42,9 @@
         })
         .catch((err: unknown) => {
           console.error("mermaid render failed:", err);
+          const msg = err instanceof Error ? err.message : String(err);
           el.classList.add("mermaid-error");
+          el.textContent = msg || "Mermaid failed to render this diagram.";
         });
     }
   }
