@@ -57,3 +57,13 @@ def last_commit_info(site: SiteConfig, path: Path) -> dict | None:
     except OSError:
         return None
     return {"date": mtime.astimezone().isoformat()}
+
+
+def apply_git_meta(site: SiteConfig, src: Path, meta: dict) -> None:
+    info = last_commit_info(site, src)
+    if info:
+        meta["lastmod"] = info["date"][:10]
+        if info.get("hash"):
+            meta["lastcommit"] = info["hash"]
+            meta["lastcommit_author"] = info["author"]
+            meta["lastcommit_date"] = info["date"]

@@ -15,3 +15,11 @@ def url_rel(rel: str) -> str:
     """Strip leading dots from path segments so Hugo renders them (hidden
     files and directories are skipped by Hugo)."""
     return "/".join(seg.lstrip(".") for seg in rel.split("/"))
+
+
+def package_dir() -> Path:
+    return Path(__file__).resolve().parents[1]
+
+
+def templates_dir() -> Path:
+    return package_dir() / "templates"
