@@ -1,5 +1,7 @@
 # Hugo Custom
 
+## Not Ready to Use due to AI Code.
+
 ## What Problem This Solves?
 
 Let's say you have a folder with your notes, *.md*, code, etc, and you would like to put all of that in a website where references across the content work, and it can be deployed, so anyone can read it. This is one of the applications of static site generators. I'm using [Hugo](https://github.com/gohugoio/hugo) SSG. 
@@ -26,7 +28,7 @@ flowchart LR
 
 ## AI Generated Section
 
-At this moment, the code is AI generated, seems to work, but I have to review it at some moment.
+At this moment, the code is AI generated, seems to work, but I have to review it at some moment. The pipeline is deliberately structured as a **plugin architecture** — every feature (pages, code views, graph, sidebar, assets, …) is a self-contained plugin with a uniform contract and a shared `StageContext` registry. The global helpers that multiple plugins need live in `utils/`; everything plugin-specific lives inside the plugin itself. See [Architecture](#architecture) for the full design and how to add a new plugin.
 
 ### What It Is?
 
@@ -427,6 +429,128 @@ This repository is its own test bed: it publishes itself to
 
 Vendored assets are downloaded on first use and cached, so builds are fast and work offline after
 the first run.
+
+### Architecture
+
+The codebase is split into three layers: a thin **framework** that drives the build, a set of self-contained **plugins** that implement every feature, and a small **shared `utils/`** for helpers that more than one plugin needs. Plugin-specific infrastructure (vendoring, bundling, OG generation, markdown transforms…) lives **inside the plugin itself**, never in `utils/`.
+
+```mermaid
+flowchart TB
+    Cfg[SiteConfig<br>hugo_custom_site.toml] --> Builder
+    Builder -->|collect + ignore specs| Published[published files]
+    Published -->|for each file: first handles()| Plugins
+    subgraph Plugins[Default plugin registry]
+        direction TB
+        P1[Notebook / Page<br>handles .md/.ipynb]
+        P2[CodeView<br>handles CODE_EXTENSIONS]
+        P3[Preview<br>handles PREVIEW_KINDS]
+        P4[Raw<br>fallback]
+        P5[Homepage<br>post_stage]
+        P6[Assets<br>post_stage]
+        P7[Sidebar<br>post_stage]
+        P8[Graph<br>post_stage]
+    end
+    Plugins -->|record_node / write_content<br>copy_static| Ctx[StageContext]
+    Ctx -->|post_stage in order| Plugins
+    Ctx -->|expected sets| Clean[clean_content / clean_static]
+    Clean --> Render[hugo --source stage --destination output]
+```
+
+#### Contract — `src/hugo_custom/plugins/base.py`
+
+Every plugin implements the same 4-method ABC (no feature-specific hooks):
+
+```python
+from abc import ABC
+from pathlib import Path
+
+class Plugin(ABC):
+    name: str
+    def handles(self, src: Path) -> bool: ...        # owns this input file?
+    def process(self, ctx, src: Path) -> None: ...   # transform one file
+    def post_stage(self, ctx) -> None: ...           # once after all files
+```
+
+`handles` is only used in the dispatch phase (file → first plugin that returns `True`). `post_stage` is for aggregation work (homepage, assets, sidebar, graph).
+
+#### Shared context & registry — `src/hugo_custom/builder/context.py`
+
+`StageContext` is the only channel between the framework and plugins (and between plugins):
+
+```python
+@dataclass
+class StageContext:
+    site: SiteConfig
+    published: list[Path]; published_rels: set[str]
+    pages: list[tuple[str, list[str], str]]
+    node_registry: list[NodeEntry]          # generic producer → consumer registry
+    content_expected: set[str]; static_expected: set[str]
+    def rel_of(self, src): ...; def url_rel(self, rel): ...
+    def write_content(self, rel, text): ...   # stage/content/rel + mark expected
+    def write_static(self, rel, text): ...    # stage/static/rel + mark expected
+    def copy_static(self, src): ...           # copy_raw + mark expected
+    def record_node(self, rel, label, kind, body="", source=None): ...
+```
+
+`record_node` is the one generic signal: every producing plugin calls it uniformly (page/notebook with `body`, code/preview/raw with `""`, homepage with `source="/"`) and `GraphPlugin` consumes `node_registry` in its `post_stage` to build `nodes`/`links`. No plugin imports another plugin’s internals; the framework never references graph state.
+
+#### Registry & ordering — `src/hugo_custom/plugins/__init__.py`
+
+```python
+def default_plugins() -> list[Plugin]:
+    return [NotebookPlugin(), PagePlugin(), CodeViewPlugin(),
+            PreviewPlugin(), RawPlugin(),   # Raw last = fallback
+            HomepagePlugin(), AssetsPlugin(), SidebarPlugin(), GraphPlugin()]
+```
+
+*Dispatch*: extensions are mutually exclusive (`.md`, `.ipynb`, `CODE_EXTENSIONS`, `PREVIEW_KINDS`, else `Raw`), so only `Raw` must be last.  
+*Post-stage*: `Homepage` must run before `Graph` (graph reads the `/` node), and `Assets` must run before `Graph` (assets does `rmtree(stage/static/js)` to rebuild the JS bundle — graph writes `static/js/graph-data.json` after). The framework guarantees *all `process` → then all `post_stage`*.
+
+#### Plugin catalog
+
+| Plugin | File | Handles | What it does |
+|---|---|---|---|
+| `NotebookPlugin` / `PagePlugin` | `plugins/content.py` | `.ipynb` / `.md` | front-matter, tags, git meta (`utils/git.py:apply_git_meta`), title, `record_node(…, body)`, `write_content` |
+| `CodeViewPlugin` | `plugins/codeview.py` | `CODE_EXTENSIONS` (`utils/extensions.py`) | `LANGS` mapping, `write_content(codeview/…)`, `copy_static`, `record_node(…, "code")`; binary files are `copy_static` only |
+| `PreviewPlugin` | `plugins/preview.py` | `PREVIEW_KINDS` (`utils/constants.py`) | `csv`→markdown table / text fence, `write_content(preview/…)`, `copy_static` |
+| `RawPlugin` | `plugins/raw.py` | `*` fallback | `copy_static` + `record_node(…, "file")` |
+| `HomepagePlugin` | `plugins/homepage.py` | `post_stage` | rebases links (internal `rebase_links`), `record_node(…, source="/")`, `write_content(_index.md)` |
+| `AssetsPlugin` | `plugins/assets/__init__.py` (+ `bundle.py`, `vendors.py`, `og.py`, `constants.py`) | `post_stage` | OG images, `vendor/` (KaTeX/Mermaid/ECharts/fonts), `icons/`, `layouts/`, `css/main.css`+`chroma.css`, `stage_js` via `tsc`, `hugo.toml` |
+| `SidebarPlugin` | `plugins/sidebar.py` | `post_stage` | builds tree from `published`, writes `data/sidebar.yml` |
+| `GraphPlugin` | `plugins/graph.py` | `post_stage` (consumes `node_registry`) | internal `extract_refs`, `page_url`/`node_kind`, warns on unresolved refs, writes `static/js/graph-data.json` + `content/graph.md` |
+
+#### Shared `utils/` (only helpers used by ≥2 plugins)
+
+`paths.py:rel_of`/`url_rel`/`package_dir`/`templates_dir`, `fs.py:write_if_changed`, `git.py:git_date`/`apply_git_meta`/`last_commit_info`, `markdown.py:front_matter`/`split_front_matter`, `text.py:humanize`/`slugify`, `extensions.py:EXT_ICONS`/`CODE_EXTENSIONS`/`LANGS`/`LOCK_ICONS`/`DEFAULT_ICON`, `constants.py:CODE_OUTPUT_DIR`/`PREVIEW_OUTPUT_DIR`/`PREVIEW_KINDS`/`GRAPH_PAGE`, `hugo.py:chroma_css`/`run_hugo`/`serve_hugo`, `network.py:lan_ip`, `config_utils.py:find_config`. Everything else (e.g. `vendors.py`/`og.py`/`bundle.py:tsc_cmd`/`css_bundle`, `extract_refs`/`rebase_links`) lives inside its plugin.
+
+#### File layout
+
+```
+src/hugo_custom/
+  config.py / files.py / build.py          # framework: SiteConfig, collect/ignore, CLI
+  builder/
+    builder.py        # pipeline: collect → dispatch → post_stage → clean → render
+    context.py        # StageContext + NodeEntry + expected-set helpers
+    constants.py      # shim re-exporting utils/constants + package_dir/templates_dir
+  plugins/
+    base.py           # Plugin ABC
+    __init__.py       # default_plugins() registry (internal, ordered)
+    content.py        # Page + Notebook
+    codeview.py / preview.py / raw.py
+    homepage.py / graph.py / sidebar.py
+    assets/           # AssetsPlugin package (bundle.py, vendors.py, og.py, constants.py)
+  utils/
+    constants.py / extensions.py / paths.py / git.py / hugo.py / fs.py / text.py / …
+  templates/          # Hugo layouts, css/src (CSS_MODULES), ts/
+```
+
+Backwards-compatibility shims are kept for `hugo_custom.utils.assets.*` and `hugo_custom.builder.constants` (they now re-export from the new locations).
+
+#### Adding a new plugin
+
+1. Create `src/hugo_custom/plugins/myfeature.py` with `class MyPlugin(Plugin): name="myfeature"`; implement `handles` and/or `post_stage` as needed, using only `ctx` + `utils/` + your own internal helpers.
+2. Register it in `src/hugo_custom/plugins/__init__.py:default_plugins()` in the correct phase order (file plugins before `Raw`, aggregation plugins in `Homepage → Assets → Sidebar → Graph` order if they touch `node_registry` or `static/js`).
+3. `uv run hugo-custom --stage-only` — new `codeview/` pages, `write_content`/`copy_static` and `record_node` will be tracked and cleaned automatically.
 
 ### Caching
 
