@@ -14,3 +14,15 @@ node_modules/
 
 # compiled from templates/static/ts by tsc at stage time
 /src/hugo_custom/templates/static/js/
+
+# go
+/hugo-custom
+/hugo-custom-go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
