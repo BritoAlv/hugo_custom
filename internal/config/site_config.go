@@ -1,21 +1,22 @@
 package config
 
-type Path = string
+import "github.com/BritoAlv/hugo_custom/internal/utils"
+
 
 const configFileName = "hugo_custom_site.toml"
 
 type LocationConfig struct {
-	ProjectRoot Path
-	ContentSource Path
-	StageDir Path
-	OutputDir Path
-	CacheDir Path
+	ProjectRoot utils.Path
+	ContentSource utils.Path
+	StageDir utils.Path
+	OutputDir utils.Path
+	CacheDir utils.Path
 }
 
 type SiteMeta struct {
 	Title string
 	SiteURL string
-	HomePageMarkdown Path
+	HomePageMarkdown utils.Path
 }
 
 
@@ -24,6 +25,6 @@ type SiteConfig struct {
 	SiteMeta SiteMeta
 }
 
-func Load( root Path ) (*SiteConfig, error) {
+func Load( root utils.Path ) (*SiteConfig, error) {
 	panic("Not Implemented")
 }

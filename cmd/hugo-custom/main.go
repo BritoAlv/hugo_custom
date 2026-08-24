@@ -2,9 +2,12 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
+
+	"github.com/BritoAlv/hugo_custom/internal/builder"
 	"github.com/BritoAlv/hugo_custom/internal/config"
+	"github.com/BritoAlv/hugo_custom/internal/discovery"
+	"github.com/BritoAlv/hugo_custom/internal/render"
 	"github.com/charmbracelet/log"
 )
 
@@ -33,5 +36,27 @@ func main() {
 	}
 
 	logger.Info("build: — configuration loaded correctly")
-	fmt.Println(siteConfig.SiteMeta.Title)
+
+	publishedSet, err := discovery.Discover(root, true)
+	if err != nil {
+		logger.Error("build: failed file discovery process", "err", err)
+	}
+	logger.Info("build: — files discovered correctly")
+
+	err = builder.Stage(*siteConfig, *publishedSet)
+
+	if err != nil {
+		logger.Error("build: failed the staging process", "err", err)
+	}
+
+	err = render.Render(render.Input{
+		ProjectRoot: root,
+		StageDir:    siteConfig.LocationConfig.StageDir,
+		OutputDir:   siteConfig.LocationConfig.OutputDir,
+	})
+
+	if err != nil {
+		logger.Error("build: failed rendering the staged site", "err", err)
+	}
+
 }
