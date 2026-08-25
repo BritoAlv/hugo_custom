@@ -51,14 +51,14 @@ func Load(root utils.Path) (*SiteConfig, error) {
 		LocationConfig: LocationConfig{
 			ProjectRoot:   projectRoot,
 			ContentSource: filepath.Join(projectRoot, raw.Source),
-			StageDir:      filepath.Join(projectRoot, "hugo_src"),
+			StageDir:      filepath.Join(projectRoot, "hugo_src_go"),
 			OutputDir:     filepath.Join(projectRoot, "site_go"),
 			CacheDir:      utils.CacheDir(),
 		},
 		SiteMeta: SiteMeta{
 			Title:            raw.Title,
 			SiteURL:          raw.Siteurl,
-			HomePageMarkdown: raw.HomePage,
+			HomePageMarkdown: raw.HomePage, 
 		},
 	}, nil
 }

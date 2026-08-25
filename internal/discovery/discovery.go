@@ -5,10 +5,10 @@ import (
 )
 
 type DiscoverInput struct {
-	Root utils.Path
-	ContentSource utils.Path
+	Root           utils.Path
+	ContentSource  utils.Path
 	ConfigFileName utils.Path
-	DeployIgnore bool
+	DeployIgnore   bool
 }
 
 type PublishedSet struct {
@@ -16,5 +16,21 @@ type PublishedSet struct {
 }
 
 func Discover(discoverInput DiscoverInput) (*PublishedSet, error) {
-	panic("not implemented: discovery phase 1")
+	candidates, err := utils.Walk(discoverInput.ContentSource, []string{".git"})
+	if err != nil {
+		return nil, err
+	}
+	foundGitignores, err := findGitignores(discoverInput.Root, discoverInput.ContentSource, candidates)
+	if err != nil {
+		return nil, err
+	}
+	specs, err := loadSpecs(discoverInput.Root, discoverInput.DeployIgnore, foundGitignores)
+	if err != nil {
+		return nil, err
+	}
+	survivors, err := filter(discoverInput.Root, discoverInput.ContentSource, candidates, specs)
+	if err != nil {
+		return nil, err
+	}
+	return &PublishedSet{Files: survivors}, nil
 }
