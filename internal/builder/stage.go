@@ -2,7 +2,6 @@ package builder
 
 import (
 	"github.com/BritoAlv/hugo_custom/internal/config"
-	"github.com/BritoAlv/hugo_custom/internal/discovery"
 	"github.com/BritoAlv/hugo_custom/internal/utils"
 )
 
@@ -26,6 +25,6 @@ type sourceEntry struct {
 
 func Stage(
 	siteConfig *config.SiteConfig,
-	publishedSites *discovery.PublishedSet) (StageSummary, error) {
+	publishedSites []utils.Path) (StageSummary, error) {
 	panic("Not implemented still")
 }

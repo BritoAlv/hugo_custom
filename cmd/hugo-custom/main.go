@@ -51,7 +51,7 @@ func main() {
 
 	_, err = builder.Stage(
 		siteConfig,
-		publishedSet)
+		publishedSet.Files)
 
 	if err != nil {
 		logger.Error("build: failed the staging process", "err", err)
