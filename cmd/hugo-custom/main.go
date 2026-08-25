@@ -2,12 +2,12 @@ package main
 
 import (
 	"flag"
-	"os"
 	"github.com/BritoAlv/hugo_custom/internal/builder"
 	"github.com/BritoAlv/hugo_custom/internal/config"
 	"github.com/BritoAlv/hugo_custom/internal/discovery"
 	"github.com/BritoAlv/hugo_custom/internal/render"
 	"github.com/charmbracelet/log"
+	"os"
 )
 
 func main() {
@@ -49,9 +49,9 @@ func main() {
 	}
 	logger.Info("build: — files discovered correctly")
 
-	_, err = builder.Stage(
-		siteConfig,
-		publishedSet.Files)
+	_, err = builder.Stage(builder.StageInput{
+		SiteConfig: siteConfig,
+		Published:  publishedSet.Files})
 
 	if err != nil {
 		logger.Error("build: failed the staging process", "err", err)
