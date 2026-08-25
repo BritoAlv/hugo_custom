@@ -2,7 +2,10 @@ module github.com/BritoAlv/hugo_custom
 
 go 1.27.0
 
-require github.com/charmbracelet/log v1.0.0
+require (
+	github.com/BurntSushi/toml v1.6.0
+	github.com/charmbracelet/log v1.0.0
+)
 
 require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
