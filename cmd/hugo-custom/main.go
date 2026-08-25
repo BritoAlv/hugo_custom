@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"os"
-
 	"github.com/BritoAlv/hugo_custom/internal/builder"
 	"github.com/BritoAlv/hugo_custom/internal/config"
 	"github.com/BritoAlv/hugo_custom/internal/discovery"
@@ -13,6 +12,8 @@ import (
 
 func main() {
 	var root string
+	var deploy bool
+	flag.BoolVar(&deploy, "deploy", false, "Deploy or not?")
 	flag.StringVar(
 		&root,
 		"root",
@@ -37,7 +38,12 @@ func main() {
 
 	logger.Info("build: — configuration loaded correctly")
 
-	publishedSet, err := discovery.Discover(root, true)
+	publishedSet, err := discovery.Discover(discovery.DiscoverInput{
+		Root:           siteConfig.LocationConfig.ProjectRoot,
+		ContentSource:  siteConfig.LocationConfig.ContentSource,
+		ConfigFileName: config.ConfigFileName,
+		DeployIgnore:   deploy,
+	})
 	if err != nil {
 		logger.Error("build: failed file discovery process", "err", err)
 	}

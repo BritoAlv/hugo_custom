@@ -11,14 +11,17 @@ type stageInput struct {
 	Published  []utils.Path
 }
 
-type stageState struct {
-}
-
 type StageSummary struct {
-	Pages        int
 	Nodes        int
 	ContentFiles int
 	StaticFiles  int
+}
+
+type sourceEntry struct {
+	SourceRelativePath string
+	Label              string
+	Kind               string
+	Body               string
 }
 
 func Stage(

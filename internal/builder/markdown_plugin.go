@@ -15,6 +15,6 @@ func (MarkdownPlugin) Handles(src utils.Path) bool {
 	return strings.EqualFold(filepath.Ext(src), ".md")
 }
 
-func (MarkdownPlugin) Process(input stageInput, state *stageState, src utils.Path) error {
+func (MarkdownPlugin) Process(input stageInput, src utils.Path) (*sourceEntry, error) {
 	panic("Not implemented Yet")
 }

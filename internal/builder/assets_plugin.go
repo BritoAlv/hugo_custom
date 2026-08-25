@@ -6,6 +6,6 @@ func (AssetsEnricherPlugin) Name() string {
 	return "Assets Enricher Plugin"
 }
 
-func (AssetsEnricherPlugin) Enrich(input stageInput, state *stageState) error {
+func (AssetsEnricherPlugin) Enrich(input stageInput, sources []sourceEntry) error {
 	panic("Not implemented yet")
 }

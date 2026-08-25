@@ -3,7 +3,7 @@ package config
 import "github.com/BritoAlv/hugo_custom/internal/utils"
 
 
-const configFileName = "hugo_custom_site.toml"
+const ConfigFileName = "hugo_custom_site.toml"
 
 type LocationConfig struct {
 	ProjectRoot utils.Path
