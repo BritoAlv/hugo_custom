@@ -5,7 +5,7 @@ import (
 	"github.com/BritoAlv/hugo_custom/internal/utils"
 )
 
-type StageInput struct {
+type pluginContext struct {
 	SiteConfig *config.SiteConfig
 	Published  []utils.Path
 }
@@ -24,6 +24,6 @@ type sourceEntry struct {
 }
 
 func Stage(
-	input StageInput) (StageSummary, error) {
+	siteConfig *config.SiteConfig, published []utils.Path) (StageSummary, error) {
 	panic("Not implemented still")
 }

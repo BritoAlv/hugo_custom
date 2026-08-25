@@ -49,9 +49,7 @@ func main() {
 	}
 	logger.Info("build: — files discovered correctly")
 
-	_, err = builder.Stage(builder.StageInput{
-		SiteConfig: siteConfig,
-		Published:  publishedSet.Files})
+	_, err = builder.Stage(siteConfig, publishedSet.Files)
 
 	if err != nil {
 		logger.Error("build: failed the staging process", "err", err)
