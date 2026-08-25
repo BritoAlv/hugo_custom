@@ -6,12 +6,12 @@ import (
 	"github.com/BritoAlv/hugo_custom/internal/utils"
 )
 
-type StageInput struct {
+type stageInput struct {
 	SiteConfig *config.SiteConfig
 	Published  []utils.Path
 }
 
-type StageState struct {
+type stageState struct {
 }
 
 type StageSummary struct {
@@ -23,8 +23,6 @@ type StageSummary struct {
 
 func Stage(
 	siteConfig *config.SiteConfig,
-	publishedSites *discovery.PublishedSet,
-	filePlugins []FilePluginInterface,
-	enrichers []EnricherPluginInterface) (StageSummary, error) {
+	publishedSites *discovery.PublishedSet) (StageSummary, error) {
 	panic("Not implemented still")
 }

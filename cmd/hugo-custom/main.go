@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/BritoAlv/hugo_custom/internal/builder"
-	"github.com/BritoAlv/hugo_custom/internal/builder/plugins"
 	"github.com/BritoAlv/hugo_custom/internal/config"
 	"github.com/BritoAlv/hugo_custom/internal/discovery"
 	"github.com/BritoAlv/hugo_custom/internal/render"
@@ -46,15 +45,13 @@ func main() {
 
 	_, err = builder.Stage(
 		siteConfig,
-		publishedSet,
-		[]builder.FilePluginInterface{plugins.MarkdownPlugin{}},
-		[]builder.EnricherPluginInterface{plugins.AssetsEnricherPlugin{}})
+		publishedSet)
 
 	if err != nil {
 		logger.Error("build: failed the staging process", "err", err)
 	}
 
-	err = render.Render(render.Input{
+	err = render.Render(render.RenderInput{
 		ProjectRoot: root,
 		StageDir:    siteConfig.LocationConfig.StageDir,
 		OutputDir:   siteConfig.LocationConfig.OutputDir,
