@@ -1,11 +1,14 @@
 package builder
 
-func defaultFilePlugins() []FilePluginInterface {
-	return []FilePluginInterface {MarkdownPlugin{}}
+import (
+	"github.com/BritoAlv/hugo_custom/internal/builder/contracts"
+	markdownplugin "github.com/BritoAlv/hugo_custom/internal/builder/markdown_plugin"
+)
+
+func defaultFilePlugins() []contracts.FilePluginInterface {
+	return []contracts.FilePluginInterface {markdownplugin.MarkdownPlugin{}}
 }
 
-func defaultEnrichers() []EnricherPluginInterface {
-	return []EnricherPluginInterface{
-		AssetsEnricherPlugin{},
-	}
+func defaultEnrichers() []contracts.EnricherPluginInterface {
+	return []contracts.EnricherPluginInterface{}
 }

@@ -6,6 +6,7 @@ require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/charmbracelet/log v1.0.0
 	github.com/go-git/go-git/v6 v6.0.0-alpha.5
+	github.com/goccy/go-yaml v1.19.2
 )
 
 require (
