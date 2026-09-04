@@ -1,6 +1,7 @@
 package discovery
 
 import (
+	"github.com/BritoAlv/hugo_custom/internal/builder/contracts"
 	"github.com/BritoAlv/hugo_custom/internal/utils"
 )
 
@@ -12,7 +13,7 @@ type DiscoverInput struct {
 }
 
 type PublishedSet struct {
-	Files []utils.Path
+	Files []contracts.PublishedFile
 }
 
 func Discover(discoverInput DiscoverInput) (*PublishedSet, error) {
@@ -32,5 +33,9 @@ func Discover(discoverInput DiscoverInput) (*PublishedSet, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &PublishedSet{Files: survivors}, nil
+	files, err := mapDotPaths(survivors)
+	if err != nil {
+		return nil, err
+	}
+	return &PublishedSet{Files: files}, nil
 }

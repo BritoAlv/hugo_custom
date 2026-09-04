@@ -27,8 +27,4 @@ uv run pytest
 
 See [Overview](overview.md) for an introduction.
 
-## Keywords
-
-- setup
-- hugo
-- uv
+Tags: #setup #hugo #uv.

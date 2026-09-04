@@ -6,17 +6,10 @@ import (
 	"strings"
 )
 
-type GitInfo struct {
-	CreatedDate string
-	CommitHash  string
-	Author      string
-	CommitDate  string
-}
-
 type CommitInfo struct {
-	HashFull  string
-	Author    string
-	DateStamp string
+	CommitHash string
+	Author     string
+	CommitDate string
 }
 
 func runGit(root Path, arguments ...string) (string, error) {
@@ -29,7 +22,6 @@ func runGit(root Path, arguments ...string) (string, error) {
 	return strings.TrimSpace(string(output)), nil
 }
 
-
 func fetchCommit(root Path, path string, revision ...string) (CommitInfo, bool) {
 	args := append([]string{"log"}, append(revision, "--format=%H%x09%an%x09%aI", "--", path)...)
 	output, err := runGit(root, args...)
@@ -40,25 +32,13 @@ func fetchCommit(root Path, path string, revision ...string) (CommitInfo, bool) 
 	if len(parts) != 3 || parts[0] == "" {
 		return CommitInfo{}, false
 	}
-	return CommitInfo{HashFull: parts[0], Author: parts[1], DateStamp: parts[2]}, true
+	return CommitInfo{CommitHash: parts[0], Author: parts[1], CommitDate: parts[2]}, true
 }
 
-func ReadGitInfo(root Path, absoluteFilePath string) (GitInfo, error) {
-	gitInfo := GitInfo{}
-
-	first, found := fetchCommit(root, absoluteFilePath, "--reverse", "-1")
-	if !found {
-		return GitInfo{}, fmt.Errorf("could not find first commit for %s", absoluteFilePath)
-	}
-	gitInfo.CreatedDate = first.DateStamp
-
+func ReadLastCommitMeta(root Path, absoluteFilePath string) (CommitInfo, error) {
 	last, found := fetchCommit(root, absoluteFilePath, "-1")
 	if !found {
-		return GitInfo{}, fmt.Errorf("could not find last commit for %s", absoluteFilePath)
+		return CommitInfo{}, fmt.Errorf("could not find last commit for %s", absoluteFilePath)
 	}
-	gitInfo.CommitHash = last.HashFull
-	gitInfo.Author = last.Author
-	gitInfo.CommitDate = last.DateStamp
-
-	return gitInfo, nil
+	return last, nil
 }

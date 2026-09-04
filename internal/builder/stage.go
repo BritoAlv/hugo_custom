@@ -1,15 +1,14 @@
 package builder
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/BritoAlv/hugo_custom/internal/builder/contracts"
 	"github.com/BritoAlv/hugo_custom/internal/config"
-	"github.com/BritoAlv/hugo_custom/internal/utils"
 )
-
-
 
 type StageSummary struct {
 	Nodes        int
@@ -17,9 +16,8 @@ type StageSummary struct {
 	StaticFiles  int
 }
 
-
 func Stage(
-	siteConfig *config.SiteConfig, published []utils.Path) (StageSummary, error) {
+	siteConfig *config.SiteConfig, published []contracts.PublishedFile) (StageSummary, error) {
 
 	stageDir := siteConfig.LocationConfig.StageDir
 	err := os.RemoveAll(stageDir)
@@ -30,18 +28,21 @@ func Stage(
 	if err != nil {
 		return StageSummary{}, fmt.Errorf("stage: creating %s: %w", stageDir, err)
 	}
+	if err := writeDotPaths(stageDir, published); err != nil {
+		return StageSummary{}, err
+	}
 
 	pluginContext := contracts.PluginContext{SiteConfig: siteConfig, Published: published}
 
 	var contents []contracts.SourceEntry
-	for _, file_path := range published {
+	for _, file := range published {
 		for _, plugin := range defaultFilePlugins() {
-			if !plugin.Handles(file_path) {
+			if !plugin.Handles(file) {
 				continue
 			}
-			entry, err := plugin.Process(pluginContext, file_path)
+			entry, err := plugin.Process(pluginContext, file)
 			if err != nil {
-				return StageSummary{}, fmt.Errorf("stage: %s failed on %s: %w", plugin.Name(), file_path, err)
+				return StageSummary{}, fmt.Errorf("stage: %s failed on %s: %w", plugin.Name(), file.SourceRelativePath, err)
 			}
 			if entry != nil {
 				contents = append(contents, *entry)
@@ -61,4 +62,22 @@ func Stage(
 
 	summary := StageSummary{}
 	return summary, nil
+}
+
+func writeDotPaths(stageDir string, published []contracts.PublishedFile) error {
+	mapped := make(map[string]string, len(published))
+	for _, file := range published {
+		mapped[file.SourceRelativePath] = file.MappedPath
+	}
+	data, err := json.Marshal(mapped)
+	if err != nil {
+		return fmt.Errorf("stage: encoding dotpaths: %w", err)
+	}
+	if err := os.MkdirAll(filepath.Join(stageDir, "data"), 0o755); err != nil {
+		return fmt.Errorf("stage: creating data dir: %w", err)
+	}
+	if err := os.WriteFile(filepath.Join(stageDir, "data", "dotpaths.json"), data, 0o644); err != nil {
+		return fmt.Errorf("stage: writing dotpaths: %w", err)
+	}
+	return nil
 }

@@ -17,7 +17,16 @@
     {{- $ext := path.Ext $head }}
     {{- $dir := "" }}
     {{- with page.File }}{{ $dir = .Dir }}{{ end }}
-    {{- $lookup := replaceRE "(^|/)\\." "${1}" (path.Join $dir $head) }}
+    {{- $joined := path.Join $dir $head }}
+    {{- $lookup := $joined }}
+    {{- with site.Data.dotpaths }}
+      {{- with index . $joined }}
+        {{- $lookup = . }}
+      {{- end }}
+    {{- end }}
+    {{- if eq $lookup $joined }}
+      {{- $lookup = replaceRE "(^|/)\\.([^/])" "${1}dot-1-${2}" $joined }}
+    {{- end }}
     {{- if eq $ext ".md" }}
       {{- with site.GetPage (strings.TrimSuffix ".md" $lookup) }}
         {{- $out = printf "%s%s" .RelPermalink $suffix }}

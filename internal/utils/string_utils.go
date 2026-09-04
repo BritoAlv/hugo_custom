@@ -1,16 +1,16 @@
 package utils
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
-func UnifyLists(list1 []string, list2 []string) []string {
+func UnifyLists[T comparable](list1 []T, list2 []T) []T {
 	capacityHint := len(list1) + len(list2)
-	seen := make(map[string]struct{}, capacityHint)
-	unified := make([]string, 0, capacityHint)
+	seen := make(map[T]struct{}, capacityHint)
+	unified := make([]T, 0, capacityHint)
 
-	appendUnique := func(value string) {
-		if value == "" {
-			return
-		}
+	appendUnique := func(value T) {
 		if _, repeated := seen[value]; repeated {
 			return
 		}
@@ -27,11 +27,11 @@ func UnifyLists(list1 []string, list2 []string) []string {
 	return unified
 }
 
-func FirstNonEmptyLine(text string) string {
+func FirstNonEmptyLine(text string) (string, error) {
 	for rawLine := range strings.SplitSeq(text, "\n") {
 		if strings.TrimSpace(rawLine) != "" {
-			return rawLine
+			return rawLine, nil
 		}
 	}
-	return ""
+	return "", fmt.Errorf("Text is empty")
 }

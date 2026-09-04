@@ -256,16 +256,20 @@ part of the stage step (`tsc --project src/hugo_custom/templates/static/ts/tscon
 ### Content conventions
 
 The pipeline treats the folder tree under `source/` as the site structure.
-Hidden files/directories (leading `.`) are rendered without the dot via `utils/paths.py:url_rel` (e.g. `.hidden/file.md` → `/hidden/file.md/`), since Hugo ignores dot-prefixed paths.
+Hidden files/directories (leading `.`) are published under an unambiguous
+dot-encoding (e.g. `.hidden/file.md` → `/dot-1-hidden/file/`), since Hugo
+ignores dot-prefixed paths. Displayed names (sidebar, link text, codeview
+headers) always use the real dotted path; only staged file names and URLs
+are encoded.
 
 - **Markdown** (`.md`): rendered as pages. Tags come from front matter or
-  `## Keywords` sections (see [Tags](#tags) below). Dates are taken from git
+  inline `#tags` (see [Tags](#tags) below). Dates are taken from git
   history (`date` from the first commit with `--diff-filter=A`, `lastmod` from the last); if no git history, `date` falls back to `lastmod`. Front
   matter is preserved and enriched; the first heading of any level (1–6) becomes the page title (Quarto-style) and is removed from the body. The page footer shows the **last commit** (short hash, author and date) when tracked by git; otherwise it falls back to the filesystem modification time — every existing file gets at least `lastmod`.
 - **Jupyter notebooks** (`.ipynb`): converted to static Markdown pages —
   markdown cells pass through, code cells become highlighted blocks (language from `kernelspec.language`) and the
   stored outputs (text/images) are kept as-is. Notebooks are **not**
-  executed. Title comes from `metadata.title` or the filename; tags only from `metadata.tags` / `metadata.categories` (no `keywords` alias, no `## Keywords` scanning).
+  executed. Title comes from `metadata.title` or the filename; tags only from `metadata.tags` / `metadata.categories` (no `keywords` alias, no inline `#tag` scanning).
 - **Code files** (`.rs`, `.py`, `.toml`, `.sh`, `.js`, …): a `codeview/`
   page is generated for each, showing the file with syntax highlighting and a
   download link; markdown links to code files are rewritten to point at their
@@ -284,21 +288,20 @@ show them in a "Keywords:" block under the title, appear on the `/tags/`
 page (grouped by tag) and are searchable by tag. There are two authoring
 mechanisms:
 
-**1. `## Keywords` section (markdown only).** A heading at level 2–4 named
-`Keywords` (optionally with a trailing period or colon), followed by a bullet
-list — each bullet becomes a tag. Fenced code blocks are ignored while scanning.
+**1. Inline `#tags` (markdown only).** Write `#tag` anywhere in the body
+text — paragraphs, headings, lists, quotes — and it becomes a tag. Tag
+characters are letters, digits, `_`, `-` and `/` (`/` nests:
+`#project/active`); a tag ends at whitespace or punctuation (`#hugo,` →
+`hugo`). Use
+`-`/`_` for multi-word tags (`#static-site`). Fenced/indented code blocks,
+inline code, autolinks and image alt text are never scanned.
 
 ```markdown
-## Keywords
-
-- hugo
-- static site
-- python
+Status update #hugo: migrated the #static-site today.
 ```
 
-The heading may also be written as `### Keywords:`. Bullets keep their
-capitalization but are slugified for the tag URL (`static site` →
-`/tags/static-site/`).
+Tags keep their capitalization but are slugified for the tag URL
+(`#static-site` → `/tags/static-site/`).
 
 **2. Front matter.** Add a `tags` list to the YAML front matter of a page.
 `categories` and `keywords` are accepted as aliases, but only the first
@@ -315,9 +318,9 @@ tags: [hugo, static-site]
 
 **Notebooks** only support front matter: put `tags` (or `categories`) in the
 notebook's `metadata` (e.g. `"metadata": {"tags": ["analysis"]}`). Notebook
-markdown cells are **not** scanned for `## Keywords`.
+markdown cells are **not** scanned for inline `#tags`.
 
-Both mechanisms can be combined: front matter tags and `## Keywords` bullets
+Both mechanisms can be combined: front matter tags and inline `#tags`
 are merged. See `examples/references/notes/` and
 `examples/references/notebooks/` for live examples of each.
 
@@ -349,6 +352,7 @@ every markdown link at build time. Write a normal markdown link with the
 ```markdown
 [see setup](setup.md)              # same folder      -> /notes/setup/
 [deep page](deep/subpage.md)       # subfolder        -> /notes/deep/subpage/
+[hidden](../.hidden/f.md)          # dot-encoded      -> /dot-1-hidden/f/
 [anchor](setup.md#requirements)    # anchor preserved -> /notes/setup/#requirements
 [notebook](../notebooks/a.ipynb)   # notebook page    -> /notebooks/a.ipynb/
 [source](../code/main.py)          # code file        -> /codeview/code/main.py/
@@ -358,7 +362,11 @@ every markdown link at build time. Write a normal markdown link with the
 Rules:
 
 - `.md` and `.ipynb` links are rewritten to the target page's permalink
-  (`#fragments` and `?queries` are preserved). Hidden-file segments lose their leading dot (`/.hidden/file.md` → `/hidden/file.md/`).
+  (`#fragments` and `?queries` are preserved). Hidden-file segments are
+  dot-encoded (`/.hidden/file.md` → `/dot-1-hidden/file.md/`); write links
+  with the real dotted path and the render hook resolves them via the staged
+  `dotpaths.json` map, which lists every published file — a miss means the
+  target isn't published and the link is left as written.
 - Code files (`.rs`, `.py`, `.toml`, `.sh`, `.bash`, `.js`, `.ts`, `.jsx`,
   `.tsx`, `.json`, `.yml`, `.yaml`, `.c`, `.h`, `.cpp`, `.hpp`, `.java`,
   `.go`, `.rb`, `.txt`, `.ini`, `.cfg`, `.sql`, `.html`, `.css`, `.lock`)

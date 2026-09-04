@@ -28,7 +28,7 @@ func ReadLines(path Path) ([]string, error) {
 	return lines, nil
 }
 
-func RelativeToRoot(root Path, absoluteTarget string) (string, error) {
+func RelativeToRoot(root Path, absoluteTarget Path) (Path, error) {
 	relativePath, err := filepath.Rel(root, absoluteTarget)
 	if err != nil {
 		return "", fmt.Errorf("utils: relativizing %s: %w", absoluteTarget, err)
@@ -62,4 +62,14 @@ func Walk(pathToWalk Path, excludedDirs []string) ([]Path, error) {
 		return nil, fmt.Errorf("utils: walking %s: %w", pathToWalk, err)
 	}
 	return files, nil
+}
+
+func WriteContentToFile(absoluteTargetPath Path, content string) error {
+	if err := os.MkdirAll(filepath.Dir(absoluteTargetPath), 0o755); err != nil {
+		return fmt.Errorf("utils: creating parent of %s: %w", absoluteTargetPath, err)
+	}
+	if err := os.WriteFile(absoluteTargetPath, []byte(content), 0o644); err != nil {
+		return fmt.Errorf("utils: writing %s: %w", absoluteTargetPath, err)
+	}
+	return nil
 }

@@ -26,7 +26,4 @@ From `/notes/deep/subpage/`, two levels up reach the reference assets:
 
 [../../assets/diagram.svg](../../assets/diagram.svg)
 
-## Keywords
-
-- nesting
-- links
+Tags: #nesting #links.
