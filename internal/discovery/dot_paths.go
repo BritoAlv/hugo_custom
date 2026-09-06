@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/BritoAlv/hugo_custom/internal/builder/contracts"
 	"github.com/BritoAlv/hugo_custom/internal/utils"
 )
 
@@ -44,14 +43,21 @@ func encodeDotPath(sourceRelativePath utils.Path) utils.Path {
 	return utils.Path(strings.Join(segments, "/"))
 }
 
-func mapDotPaths(sourceRelativePaths []utils.Path) ([]contracts.PublishedFile, error) {
-	files := make([]contracts.PublishedFile, 0, len(sourceRelativePaths))
+// dotMapping is the pipeline-internal result of path encoding: the source
+// path plus its dot-encoded mapped path, before metadata is attached.
+type dotMapping struct {
+	source utils.Path
+	mapped utils.Path
+}
+
+func mapDotPaths(sourceRelativePaths []utils.Path) ([]dotMapping, error) {
+	mappings := make([]dotMapping, 0, len(sourceRelativePaths))
 	for _, sourceRelativePath := range sourceRelativePaths {
 		mappedPath := encodeDotPath(sourceRelativePath)
 		if mappedPath == "" {
 			return nil, fmt.Errorf("discovery: %q maps to an empty mapped path", sourceRelativePath)
 		}
-		files = append(files, contracts.PublishedFile{MappedPath: mappedPath, SourceRelativePath: sourceRelativePath})
+		mappings = append(mappings, dotMapping{source: sourceRelativePath, mapped: mappedPath})
 	}
-	return files, nil
+	return mappings, nil
 }

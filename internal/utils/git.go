@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"fmt"
 	"os/exec"
 	"strings"
 )
@@ -10,6 +9,10 @@ type CommitInfo struct {
 	CommitHash string
 	Author     string
 	CommitDate string
+}
+
+type GitInfo struct {
+	LastCommit CommitInfo
 }
 
 func runGit(root Path, arguments ...string) (string, error) {
@@ -35,10 +38,10 @@ func fetchCommit(root Path, path string, revision ...string) (CommitInfo, bool) 
 	return CommitInfo{CommitHash: parts[0], Author: parts[1], CommitDate: parts[2]}, true
 }
 
-func ReadLastCommitMeta(root Path, absoluteFilePath string) (CommitInfo, error) {
+func ReadGitInfo(root Path, absoluteFilePath string) *GitInfo {
 	last, found := fetchCommit(root, absoluteFilePath, "-1")
 	if !found {
-		return CommitInfo{}, fmt.Errorf("could not find last commit for %s", absoluteFilePath)
+		return nil
 	}
-	return last, nil
+	return &GitInfo{LastCommit: last}
 }

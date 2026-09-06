@@ -33,9 +33,21 @@ func Discover(discoverInput DiscoverInput) (*PublishedSet, error) {
 	if err != nil {
 		return nil, err
 	}
-	files, err := mapDotPaths(survivors)
+	mappings, err := mapDotPaths(survivors)
 	if err != nil {
 		return nil, err
+	}
+	files := make([]contracts.PublishedFile, 0, len(mappings))
+	for _, mapping := range mappings {
+		metadata, err := readMetadata(discoverInput.Root, discoverInput.ContentSource, mapping.source)
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, contracts.PublishedFile{
+			SourceRelativePath: mapping.source,
+			MappedPath:         mapping.mapped,
+			Metadata:           metadata,
+		})
 	}
 	return &PublishedSet{Files: files}, nil
 }

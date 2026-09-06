@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/BritoAlv/hugo_custom/internal/builder/contracts"
 	"github.com/BritoAlv/hugo_custom/internal/utils"
@@ -24,23 +23,13 @@ func (MarkdownPlugin) Handles(file contracts.PublishedFile) bool {
 
 func (MarkdownPlugin) Process(input contracts.PluginContext, file contracts.PublishedFile) (*contracts.SourceEntry, error) {
 	sourceRoot := input.SiteConfig.LocationConfig.ContentSource
-	projectRoot := input.SiteConfig.LocationConfig.ProjectRoot
 	absolutePath := filepath.Join(sourceRoot, file.SourceRelativePath)
 
 	rawText, err := os.ReadFile(absolutePath)
 	if err != nil {
 		return nil, fmt.Errorf("markdown plugin: reading %s: %w", file.SourceRelativePath, err)
 	}
-	fileInfo, err := os.Stat(absolutePath)
-	if err != nil {
-		return nil, fmt.Errorf("markdown plugin: stating %s: %w", file.SourceRelativePath, err)
-	}
-	lastModificationDate := fileInfo.ModTime().UTC().Format(time.RFC3339)
 	parsedMeta, body := splitFrontMatterBody(string(rawText))
-	lastCommitMeta, err := utils.ReadLastCommitMeta(projectRoot, absolutePath)
-	if err != nil {
-		return nil, fmt.Errorf("markdown plugin: reading git info for %s: %w", file.SourceRelativePath, err)
-	}
 	bodyTags := extractInlineTags(body)
 
 	unifiedTags := utils.UnifyLists(parsedMeta.Tags, bodyTags)
@@ -65,12 +54,10 @@ func (MarkdownPlugin) Process(input contracts.PluginContext, file contracts.Publ
 	}
 
 	derived := derivedMarkdownMeta{
-		title:                resolvedTitle,
-		tags:                 unifiedTags,
-		lastModificationDate: lastModificationDate,
-		sourceRelativePath:   file.SourceRelativePath,
+		title: resolvedTitle,
+		tags:  unifiedTags,
 	}
-	stagedContent := serializeFrontMatter(lastCommitMeta, derived) + body
+	stagedContent := serializeFrontMatter(file, derived) + body
 	if err := input.WriteContent(file.MappedPath, stagedContent); err != nil {
 		return nil, err
 	}

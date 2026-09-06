@@ -33,6 +33,12 @@ func (input PluginContext) WriteContent(rel string, content string) error {
 type PublishedFile struct {
 	SourceRelativePath utils.Path // path relative to content source.
 	MappedPath         utils.Path // dot-encoded path that hugo stages and serves.
+	Metadata           Metadata   // filesystem + git facts collected once in discovery.
+}
+
+type Metadata struct {
+	ModTime string // filesystem modification time, RFC3339 UTC. Always set.
+	Git     *utils.GitInfo
 }
 
 type SourceEntry struct {

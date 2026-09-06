@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/BritoAlv/hugo_custom/internal/builder/contracts"
 	"github.com/BritoAlv/hugo_custom/internal/utils"
 )
 
@@ -69,13 +68,13 @@ func TestMapDotPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []contracts.PublishedFile{
-		{MappedPath: "notes/a.md", SourceRelativePath: "notes/a.md"},
-		{MappedPath: "dot-1-hidden/b.md", SourceRelativePath: ".hidden/b.md"},
-		{MappedPath: "dot-1-gitignore", SourceRelativePath: ".gitignore"},
+	want := []dotMapping{
+		{source: "notes/a.md", mapped: "notes/a.md"},
+		{source: ".hidden/b.md", mapped: "dot-1-hidden/b.md"},
+		{source: ".gitignore", mapped: "dot-1-gitignore"},
 	}
 	if !reflect.DeepEqual(got, want) {
-		t.Errorf("mapDotPaths() = %q; want %q", got, want)
+		t.Errorf("mapDotPaths() = %+v; want %+v", got, want)
 	}
 }
 
@@ -107,12 +106,17 @@ func TestDiscoverMapsDotPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []contracts.PublishedFile{
-		{MappedPath: "dot-1-gitignore", SourceRelativePath: ".gitignore"},
-		{MappedPath: "dot-1-hidden/b.md", SourceRelativePath: ".hidden/b.md"},
-		{MappedPath: "notes/a.md", SourceRelativePath: "notes/a.md"},
+	want := []struct{ mapped, rel string }{
+		{"dot-1-gitignore", ".gitignore"},
+		{"dot-1-hidden/b.md", ".hidden/b.md"},
+		{"notes/a.md", "notes/a.md"},
 	}
-	if !reflect.DeepEqual(got.Files, want) {
-		t.Errorf("Discover().Files = %q; want %q", got.Files, want)
+	if len(got.Files) != len(want) {
+		t.Fatalf("Discover().Files len = %d; want %d (%+v)", len(got.Files), len(want), got.Files)
+	}
+	for i, w := range want {
+		if got.Files[i].MappedPath != w.mapped || got.Files[i].SourceRelativePath != w.rel {
+			t.Errorf("Discover().Files[%d] = %+v; want mapped=%q rel=%q", i, got.Files[i], w.mapped, w.rel)
+		}
 	}
 }

@@ -58,7 +58,7 @@ func Load(root utils.Path) (*SiteConfig, error) {
 		SiteMeta: SiteMeta{
 			Title:            raw.Title,
 			SiteURL:          raw.Siteurl,
-			HomePageMarkdown: raw.HomePage, 
+			HomePageMarkdown: raw.HomePage,
 		},
 	}, nil
 }

@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/BritoAlv/hugo_custom/internal/utils"
+	"github.com/BritoAlv/hugo_custom/internal/builder/contracts"
 	"github.com/goccy/go-yaml"
 )
 
@@ -34,18 +34,26 @@ type hugoFrontMatter struct {
 	LastCommit           string   `yaml:"lastcommit,omitempty"`
 	LastCommitAuthor     string   `yaml:"lastcommit_author,omitempty"`
 	LastCommitDate       string   `yaml:"lastcommit_date,omitempty"`
-	SourceRelativePath string `yaml:"source_relative_path"`
+	SourceRelativePath   string   `yaml:"source_relative_path"`
 }
 
-func serializeFrontMatter(gitFacts utils.CommitInfo, derivedContent derivedMarkdownMeta) string {
+func frontMatterGit(fileMeta contracts.Metadata) (commit, author, date string) {
+	if fileMeta.Git == nil {
+		return "", "", ""
+	}
+	return fileMeta.Git.LastCommit.CommitHash, fileMeta.Git.LastCommit.Author, fileMeta.Git.LastCommit.CommitDate
+}
+
+func serializeFrontMatter(file contracts.PublishedFile, derivedContent derivedMarkdownMeta) string {
+	lastCommit, lastCommitAuthor, lastCommitDate := frontMatterGit(file.Metadata)
 	staged := hugoFrontMatter{
 		Title:                derivedContent.title,
-		LastModificationDate: derivedContent.lastModificationDate,
+		LastModificationDate: file.Metadata.ModTime,
 		Tags:                 derivedContent.tags,
-		LastCommit:           gitFacts.CommitHash,
-		LastCommitAuthor:     gitFacts.Author,
-		LastCommitDate:       gitFacts.CommitDate,
-		SourceRelativePath:   derivedContent.sourceRelativePath,
+		LastCommit:           lastCommit,
+		LastCommitAuthor:     lastCommitAuthor,
+		LastCommitDate:       lastCommitDate,
+		SourceRelativePath:   file.SourceRelativePath,
 	}
 
 	dump, err := yaml.Marshal(staged)
@@ -56,8 +64,6 @@ func serializeFrontMatter(gitFacts utils.CommitInfo, derivedContent derivedMarkd
 }
 
 type derivedMarkdownMeta struct {
-	title                string
-	tags                 []string
-	lastModificationDate string
-	sourceRelativePath   string
+	title string
+	tags  []string
 }
