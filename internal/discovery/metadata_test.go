@@ -27,7 +27,7 @@ func TestReadMetadataUntracked(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if meta.ModTime == "" {
+	if meta.LastModificationDate == "" {
 		t.Error("Metadata.ModTime is empty; want non-empty")
 	}
 	if meta.Git != nil {
@@ -61,7 +61,7 @@ func TestReadMetadataTracked(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if meta.ModTime == "" {
+	if meta.LastModificationDate == "" {
 		t.Error("Metadata.ModTime is empty; want non-empty")
 	}
 	if meta.Git == nil {
@@ -100,7 +100,7 @@ func TestDiscoverEnrichesMetadata(t *testing.T) {
 		t.Fatalf("Discover().Files len = %d; want 2", len(got.Files))
 	}
 	for i := range got.Files {
-		if got.Files[i].Metadata.ModTime == "" {
+		if got.Files[i].Metadata.LastModificationDate == "" {
 			t.Errorf("Discover().Files[%d].Metadata.ModTime is empty; want non-empty", i)
 		}
 		if got.Files[i].Metadata.Git != nil {

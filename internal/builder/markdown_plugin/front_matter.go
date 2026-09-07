@@ -48,7 +48,7 @@ func serializeFrontMatter(file contracts.PublishedFile, derivedContent derivedMa
 	lastCommit, lastCommitAuthor, lastCommitDate := frontMatterGit(file.Metadata)
 	staged := hugoFrontMatter{
 		Title:                derivedContent.title,
-		LastModificationDate: file.Metadata.ModTime,
+		LastModificationDate: file.Metadata.LastModificationDate,
 		Tags:                 derivedContent.tags,
 		LastCommit:           lastCommit,
 		LastCommitAuthor:     lastCommitAuthor,

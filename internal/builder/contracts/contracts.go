@@ -37,8 +37,8 @@ type PublishedFile struct {
 }
 
 type Metadata struct {
-	ModTime string // filesystem modification time, RFC3339 UTC. Always set.
-	Git     *utils.GitInfo
+	LastModificationDate string // filesystem modification time, RFC3339 UTC. Always set.
+	Git                  *utils.GitInfo
 }
 
 type SourceEntry struct {
